@@ -44,6 +44,40 @@ export async function getCertificateById(id: string): Promise<Certificate | null
   return { ...cert, status: computeStatus(cert.expiry_date) };
 }
 
+/**
+ * The ONLY function the buyer portal uses to read certificates.
+ * Hard rule: buyers see exclusively REL-internal certs that are explicitly
+ * marked buyer_visible. Supplier-submitted certs are NEVER returned here.
+ * If the buyer has visible_tags set (non-empty), the result is further
+ * restricted to certs whose buyer_tags intersect those tags. An empty
+ * visibleTags array means "all buyer_visible certs".
+ */
+export async function getBuyerVisibleCertificates(
+  visibleTags: string[] = []
+): Promise<Certificate[]> {
+  const { data, error } = await adminClient
+    .from('certificates')
+    .select('*')
+    .eq('buyer_visible', true)
+    .eq('submitted_by_supplier', false)
+    .order('expiry_date', { ascending: true });
+  if (error) throw error;
+
+  let certs = ((data as Certificate[]) ?? []).map((cert) => ({
+    ...cert,
+    status: computeStatus(cert.expiry_date),
+  }));
+
+  // Tag-based restriction (intersection), applied in code so the rule is
+  // explicit and testable. Empty visibleTags = no restriction.
+  if (visibleTags.length > 0) {
+    const allowed = new Set(visibleTags);
+    certs = certs.filter((c) => (c.buyer_tags ?? []).some((t) => allowed.has(t)));
+  }
+
+  return certs;
+}
+
 export async function createCertificate(input: CertInput): Promise<Certificate> {
   const { data, error } = await adminClient
     .from('certificates')

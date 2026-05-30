@@ -13,6 +13,7 @@ const navLinks: NavLink[] = [
   { href: '/suppliers', label: 'Suppliers' },
   { href: '/review-queue', label: 'Review Queue', badge: true },
   { href: '/pdf-requests', label: 'PDF Requests' },
+  { href: '/buyer-activity', label: 'Buyer Activity', adminOnly: true },
   { href: '/renewal-workload', label: 'Renewal Workload' },
   { href: '/audit-pack', label: 'Audit Pack' },
   { href: '/users', label: 'Users' },
@@ -34,6 +35,7 @@ export default async function DashboardLayout({
   }
 
   const userName = headersList.get('x-user-name') ?? 'User';
+  const userRole = headersList.get('x-user-role') ?? undefined;
 
   const pendingQueue = await getPendingReviewQueue().catch(() => []);
   const pendingCount = pendingQueue.length;
@@ -47,7 +49,7 @@ export default async function DashboardLayout({
             REL Cert Tracker
           </span>
         </div>
-        <Sidebar links={navLinks} pendingCount={pendingCount} />
+        <Sidebar links={navLinks} pendingCount={pendingCount} role={userRole} />
         <div className="p-4 border-t border-gray-200">
           <form action="/api/auth/logout" method="POST">
             <button

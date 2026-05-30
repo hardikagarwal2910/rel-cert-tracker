@@ -34,6 +34,35 @@ export async function verifySupplierToken(
 }
 
 /**
+ * Verify the buyer httpOnly cookie (rel_buyer_token).
+ * Returns decoded payload or null.
+ */
+export async function verifyBuyerToken(
+  req: NextRequest
+): Promise<{ buyer_id: string; role: string; email: string } | null> {
+  const token = req.cookies.get('rel_buyer_token')?.value;
+  if (!token) return null;
+
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    if (
+      payload &&
+      typeof payload.buyer_id === 'string' &&
+      payload.role === 'buyer'
+    ) {
+      return {
+        buyer_id: payload.buyer_id,
+        role: payload.role,
+        email: (payload.email as string) ?? '',
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * requireAuth — check NextAuth JWT for admin/staff role.
  * Returns the decoded token or a 401/403 response.
  */

@@ -1,6 +1,7 @@
 import { getCertificateById } from '@/lib/db/certificates';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import BuyerVisibilityEditor from './BuyerVisibilityEditor';
 
 const statusBadge = (status: string) => {
   if (status === 'active') return 'bg-green-100 text-green-800';
@@ -121,6 +122,13 @@ export default async function CertDetailPage({ params }: Props) {
           )}
         </div>
       </div>
+
+      {/* Admin control: buyer visibility + tags (Module 14) */}
+      <BuyerVisibilityEditor
+        certId={cert.id}
+        initialVisible={!!cert.buyer_visible}
+        initialTags={cert.buyer_tags ?? []}
+      />
 
       {/* Version history */}
       {cert.version_history?.length > 0 && (

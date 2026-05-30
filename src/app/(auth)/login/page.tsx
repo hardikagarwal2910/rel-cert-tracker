@@ -208,6 +208,12 @@ export default function LoginPage() {
             Supplier login →
           </a>
         </p>
+        <p className="text-center mt-1 text-xs text-gray-400">
+          Are you a buyer?{' '}
+          <a href="/buyer/register" className="hover:underline" style={{ color: '#878687' }}>
+            Request access →
+          </a>
+        </p>
       </div>
     </div>
   );

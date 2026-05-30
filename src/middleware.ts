@@ -1,15 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { verifySupplierToken } from '@/lib/auth/middleware';
+import { verifySupplierToken, verifyBuyerToken } from '@/lib/auth/middleware';
 
 // Public routes that require no authentication
 const PUBLIC_ROUTES = [
   '/login',
   '/supplier/login',
   '/supplier/accept-invite',
+  '/buyer/login',
+  '/buyer/register',
+  '/buyer/set-password',
   '/api/auth',
   '/api/supplier-auth',
+  '/api/buyer-auth',
   '/api/download',
+  // POST (buyer request) + token-gated approve/deny email links are
+  // authless by design; the GET list still enforces admin in-handler.
+  '/api/pdf-requests',
 ];
 
 function isPublicRoute(pathname: string): boolean {
@@ -69,6 +76,18 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set('x-supplier-id', supplierPayload.supplier_id);
     requestHeaders.set('x-supplier-email', supplierPayload.email);
+    return withCors(NextResponse.next({ request: { headers: requestHeaders } }));
+  }
+
+  // Buyer portal routes — verify buyer JWT cookie
+  if (pathname.startsWith('/buyer-portal')) {
+    const buyerPayload = await verifyBuyerToken(req);
+    if (!buyerPayload) {
+      return NextResponse.redirect(new URL('/buyer/login', req.url));
+    }
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set('x-buyer-id', buyerPayload.buyer_id);
+    requestHeaders.set('x-buyer-email', buyerPayload.email);
     return withCors(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 

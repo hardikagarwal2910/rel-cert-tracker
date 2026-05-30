@@ -180,6 +180,69 @@ export async function sendOtp(params: { to: string; otp: string }): Promise<Send
   return sendEmail({ to: params.to, subject, html, trigger: 'otp' });
 }
 
+// ─── sendBuyerRegistrationNotification (to REL admin) ─────────────
+export async function sendBuyerRegistrationNotification(params: {
+  to: string;
+  buyerName: string;
+  company: string;
+  email: string;
+  adminUrl: string;
+}): Promise<SendResult> {
+  const subject = `New buyer registration pending approval — ${params.buyerName}`;
+  const html = wrap(`
+    <h2 style="color:#878687;margin-top:0">New Buyer Registration</h2>
+    <p>A new buyer has requested access and is awaiting approval:</p>
+    <p style="line-height:1.8">
+      <strong>Name:</strong> ${params.buyerName}<br/>
+      <strong>Company:</strong> ${params.company || '—'}<br/>
+      <strong>Email:</strong> ${params.email}
+    </p>
+    <p style="margin-top:24px">
+      <a href="${params.adminUrl}" style="background:#F5C400;color:#222;padding:10px 20px;border-radius:4px;text-decoration:none;font-weight:600">
+        Review in Buyer Activity →
+      </a>
+    </p>
+  `);
+  return sendEmail({ to: params.to, subject, html, trigger: 'buyer_register' });
+}
+
+// ─── sendBuyerApprovalEmail (to buyer) ────────────────────────────
+export async function sendBuyerApprovalEmail(params: {
+  to: string;
+  buyerName: string;
+  setPasswordUrl: string;
+}): Promise<SendResult> {
+  const subject = `Your REL buyer access has been approved`;
+  const html = wrap(`
+    <h2 style="color:#878687;margin-top:0">Access Approved</h2>
+    <p>Dear ${params.buyerName},</p>
+    <p>Your request for access to the <strong>REL Compliance Portal</strong> has been approved.
+    Please set your password to activate your account.</p>
+    <p style="margin-top:24px">
+      <a href="${params.setPasswordUrl}" style="background:#F5C400;color:#222;padding:10px 20px;border-radius:4px;text-decoration:none;font-weight:600">
+        Set Your Password →
+      </a>
+    </p>
+    <p style="color:#999;font-size:12px;margin-top:16px">This link expires in 7 days.</p>
+  `);
+  return sendEmail({ to: params.to, subject, html, trigger: 'buyer_approved' });
+}
+
+// ─── sendBuyerRejectionEmail (to buyer) ───────────────────────────
+export async function sendBuyerRejectionEmail(params: {
+  to: string;
+  buyerName: string;
+}): Promise<SendResult> {
+  const subject = `Update on your REL access request`;
+  const html = wrap(`
+    <h2 style="color:#878687;margin-top:0">Access Request Update</h2>
+    <p>Dear ${params.buyerName},</p>
+    <p>Thank you for your interest. After review, we are unable to grant portal access at this time.
+    If you believe this is in error, please contact your REL representative.</p>
+  `);
+  return sendEmail({ to: params.to, subject, html, trigger: 'buyer_rejected' });
+}
+
 // ─── Internal sendEmail helper ────────────────────────────────────
 async function sendEmail(params: {
   to: string;

@@ -110,6 +110,8 @@ export interface User {
   updated_at: string;
 }
 
+export type BuyerStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
+
 export interface Buyer {
   id: string;
   name: string;
@@ -118,8 +120,25 @@ export interface Buyer {
   designation?: string | null;
   ip_address?: string | null;   // stored encrypted
   geolocation?: Record<string, unknown> | null;
+  password_hash?: string | null;
+  email_hash?: string | null;
+  status: BuyerStatus;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  last_login?: string | null;
+  visible_tags?: string[];
   created_at: string;
   updated_at: string;
+}
+
+export interface BuyerVisit {
+  id: string;
+  buyer_id: string;
+  ip_address?: string | null;   // stored encrypted
+  geolocation?: Record<string, unknown> | null;
+  path?: string | null;
+  user_agent?: string | null;
+  visited_at: string;
 }
 
 export interface Certificate {

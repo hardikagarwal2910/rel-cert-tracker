@@ -7,19 +7,21 @@ export interface NavLink {
   href: string;
   label: string;
   badge?: boolean;
+  adminOnly?: boolean;
 }
 
 const YELLOW = '#F5C400';
 
-export default function Sidebar({ links, pendingCount }: { links: NavLink[]; pendingCount: number }) {
+export default function Sidebar({ links, pendingCount, role }: { links: NavLink[]; pendingCount: number; role?: string }) {
   const pathname = usePathname();
 
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
+  const visibleLinks = links.filter((l) => !l.adminOnly || role === 'admin');
 
   return (
     <nav className="flex-1 overflow-y-auto py-4">
       <ul className="space-y-1 px-2">
-        {links.map((link) => {
+        {visibleLinks.map((link) => {
           const active = isActive(link.href);
           return (
             <li key={link.href}>
