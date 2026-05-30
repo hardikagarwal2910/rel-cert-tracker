@@ -243,6 +243,43 @@ export async function sendBuyerRejectionEmail(params: {
   return sendEmail({ to: params.to, subject, html, trigger: 'buyer_rejected' });
 }
 
+// ─── sendWeeklyDigest (to REL) ────────────────────────────────────
+export async function sendWeeklyDigest(params: {
+  to: string;
+  appUrl: string;
+  expiring7: number;
+  expiring30: number;
+  expiring60: number;
+  renewalsInProgress: number;
+  supplierReview: number;
+  pendingBuyers: number;
+}): Promise<SendResult> {
+  const subject = `REL Weekly Compliance Digest`;
+  const row = (label: string, n: number, urgent = false) => `
+    <tr>
+      <td style="padding:8px 0;color:#444">${label}</td>
+      <td style="padding:8px 0;text-align:right;font-weight:700;color:${urgent && n > 0 ? '#d9534f' : '#222'}">${n}</td>
+    </tr>`;
+  const html = wrap(`
+    <h2 style="color:#878687;margin-top:0">Weekly Compliance Digest</h2>
+    <p>Here is this week's certification summary.</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      ${row('Certificates expiring within 7 days', params.expiring7, true)}
+      ${row('Certificates expiring within 30 days', params.expiring30, true)}
+      ${row('Certificates expiring within 60 days', params.expiring60)}
+      ${row('Renewals in progress', params.renewalsInProgress)}
+      ${row('Supplier certificates pending review', params.supplierReview, true)}
+      ${row('Buyer registrations pending approval', params.pendingBuyers, true)}
+    </table>
+    <p style="margin-top:24px">
+      <a href="${params.appUrl}" style="background:#F5C400;color:#222;padding:10px 20px;border-radius:4px;text-decoration:none;font-weight:600">
+        Open Tracker →
+      </a>
+    </p>
+  `);
+  return sendEmail({ to: params.to, subject, html, trigger: 'digest' });
+}
+
 // ─── Internal sendEmail helper ────────────────────────────────────
 async function sendEmail(params: {
   to: string;

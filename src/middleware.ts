@@ -23,6 +23,9 @@ const PUBLIC_ROUTES = [
 ];
 
 function isPublicRoute(pathname: string): boolean {
+  // /api/auth/me needs the authenticated session headers — it must NOT be
+  // treated as public even though it starts with the /api/auth prefix.
+  if (pathname === '/api/auth/me') return false;
   return PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
 }
 

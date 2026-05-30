@@ -1,8 +1,12 @@
-import { getLocations } from '@/lib/db/locations';
+import { getLocations, getCertCountByLocation } from '@/lib/db/locations';
 import AddLocationForm from './AddLocationForm';
 
 export default async function LocationsPage() {
-  const locations = await getLocations().catch(() => []);
+  const [locations, counts] = await Promise.all([
+    getLocations().catch(() => []),
+    getCertCountByLocation().catch(() => []),
+  ]);
+  const countMap = new Map(counts.map((c) => [c.location_id, c.count]));
 
   return (
     <div>
@@ -19,13 +23,14 @@ export default async function LocationsPage() {
                   <th className="px-4 py-2">Name</th>
                   <th className="px-4 py-2">City</th>
                   <th className="px-4 py-2">State</th>
+                  <th className="px-4 py-2">Certificates</th>
                   <th className="px-4 py-2">Active</th>
                 </tr>
               </thead>
               <tbody>
                 {locations.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-6 text-center text-gray-500">No locations found.</td>
+                    <td colSpan={5} className="px-4 py-6 text-center text-gray-500">No locations found.</td>
                   </tr>
                 ) : (
                   locations.map((loc) => (
@@ -33,6 +38,7 @@ export default async function LocationsPage() {
                       <td className="px-4 py-2 font-medium text-gray-800">{loc.name}</td>
                       <td className="px-4 py-2 text-gray-600">{loc.city}</td>
                       <td className="px-4 py-2 text-gray-600">{loc.state}</td>
+                      <td className="px-4 py-2 text-gray-600">{countMap.get(loc.id) ?? 0}</td>
                       <td className="px-4 py-2">
                         <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${loc.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
                           {loc.active ? 'Active' : 'Inactive'}

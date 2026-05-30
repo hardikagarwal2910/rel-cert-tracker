@@ -10,6 +10,8 @@ const createSchema = z.object({
   cert_number: z.string().optional(),
   category: z.string().optional(),
   location_id: z.string().optional(),
+  issue_date: z.string().optional(),
+  renewal_process_start_date: z.string().optional(),
   buyer_visible: z.boolean().optional(),
   buyer_tags: z.array(z.string()).optional(),
   notes: z.string().optional(),

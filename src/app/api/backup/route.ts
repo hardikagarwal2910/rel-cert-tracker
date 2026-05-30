@@ -1,31 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-import archiver from 'archiver';
+import { zipSync, strToU8 } from 'fflate';
 import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
 import { appendAuditLog } from '@/lib/db/audit-log';
 import { backupLimiter } from '@/lib/rate-limit';
 import { adminClient } from '@/lib/supabase/admin';
+import { sanitiseError } from '@/lib/security/sanitise-error';
 
+// Tables included in the backup. Transient/secret tables (otp_codes,
+// download_tokens) are intentionally excluded.
 const TABLES = [
   'certificates',
   'locations',
   'categories',
   'suppliers',
   'supplier_certs',
+  'supplier_required_certs',
   'audit_log',
   'notification_log',
   'pdf_requests',
+  'buyers',
+  'buyer_visits',
+  'users',
 ] as const;
 
-async function fetchTable(tableName: string): Promise<unknown[]> {
-  const query = adminClient.from(tableName).select('*');
-  const { data, error } = await query;
-  if (error) throw error;
+// Columns stripped from the export so no password/secret hashes leak.
+const STRIP: Record<string, string[]> = {
+  users: ['password_hash'],
+  buyers: ['password_hash', 'email_hash'],
+};
 
-  // Strip password_hash from users
-  if (tableName === 'users') {
-    return (data ?? []).map((u: Record<string, unknown>) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password_hash: _ph, ...safe } = u;
+async function fetchTable(tableName: string): Promise<unknown[]> {
+  const { data, error } = await adminClient.from(tableName).select('*');
+  if (error) throw error;
+  const strip = STRIP[tableName];
+  if (strip) {
+    return (data ?? []).map((row: Record<string, unknown>) => {
+      const safe = { ...row };
+      for (const col of strip) delete safe[col];
       return safe;
     });
   }
@@ -43,53 +54,38 @@ export async function GET(req: NextRequest) {
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown';
     const dateStr = new Date().toISOString().split('T')[0];
 
-    // Fetch all tables
-    const tableData: Record<string, unknown[]> = {};
-
-    // Also include users (not in TABLES const to handle separately)
-    const allTables = [...TABLES, 'users'] as string[];
-
+    // Fetch every table (failures on a single table won't abort the backup).
+    const entries: Record<string, Uint8Array> = {};
     await Promise.all(
-      allTables.map(async (t) => {
-        tableData[t] = await fetchTable(t);
+      TABLES.map(async (t) => {
+        try {
+          const rows = await fetchTable(t);
+          entries[`${t}.json`] = strToU8(JSON.stringify(rows, null, 2));
+        } catch (e) {
+          entries[`${t}.error.txt`] = strToU8(`Failed to export ${t}: ${sanitiseError(e)}`);
+        }
       })
     );
 
-    // Build ZIP in memory
-    const chunks: Buffer[] = [];
-
-    await new Promise<void>((resolve, reject) => {
-      const archive = archiver('zip', { zlib: { level: 9 } });
-
-      archive.on('data', (chunk: Buffer) => chunks.push(chunk));
-      archive.on('end', resolve);
-      archive.on('error', reject);
-
-      for (const [name, rows] of Object.entries(tableData)) {
-        const json = JSON.stringify(rows, null, 2);
-        archive.append(Buffer.from(json, 'utf-8'), { name: `${name}.json` });
-      }
-
-      archive.finalize();
-    });
-
-    const zipBuffer = Buffer.concat(chunks);
+    // Pure-JS ZIP (no native deps — reliable on Vercel serverless).
+    const zip = zipSync(entries, { level: 6 });
 
     appendAuditLog({
       action_type: 'backup.export',
       user_identifier: auth.username,
-      detail: `Exported ${allTables.length} tables`,
+      detail: `Exported ${Object.keys(entries).length} files`,
       ip_address: ip,
     });
 
-    return new Response(zipBuffer, {
+    return new Response(new Uint8Array(zip), {
       headers: {
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="REL_Backup_${dateStr}.zip"`,
-        'Content-Length': String(zipBuffer.length),
+        'Content-Length': String(zip.length),
       },
     });
-  } catch {
+  } catch (e) {
+    console.error('[backup] export failed:', sanitiseError(e));
     return NextResponse.json({ error: 'An internal error occurred' }, { status: 500 });
   }
 }

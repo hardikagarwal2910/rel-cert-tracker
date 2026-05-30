@@ -77,6 +77,7 @@ export interface CertInput {
   google_drive_file_id?: string;
   submitted_by_supplier?: boolean;
   created_by?: string;
+  renewal_stage?: 'not_started' | 'in_progress' | 'awaiting_issuer' | 'renewed';
 }
 
 export interface RenewalInput {

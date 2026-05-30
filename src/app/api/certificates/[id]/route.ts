@@ -10,11 +10,14 @@ const updateSchema = z.object({
   cert_number: z.string().optional(),
   category: z.string().optional(),
   location_id: z.string().optional(),
+  issue_date: z.string().optional(),
+  renewal_process_start_date: z.string().optional(),
   buyer_visible: z.boolean().optional(),
   buyer_tags: z.array(z.string()).optional(),
   notes: z.string().optional(),
   renewal_cost: z.number().optional(),
   issuing_body: z.string().optional(),
+  renewal_stage: z.enum(['not_started', 'in_progress', 'awaiting_issuer', 'renewed']).optional(),
 });
 
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -53,10 +56,10 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     const cert = await updateCertificate(id, parsed.data);
 
     appendAuditLog({
-      action_type: 'certificate.update',
+      action_type: parsed.data.renewal_stage ? 'certificate.renewal_stage' : 'certificate.update',
       user_identifier: auth.username,
       target: id,
-      detail: cert.name,
+      detail: parsed.data.renewal_stage ? `${cert.name} → ${parsed.data.renewal_stage}` : cert.name,
       ip_address: ip,
     });
 

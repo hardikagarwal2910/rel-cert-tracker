@@ -142,6 +142,7 @@ export async function renewCertificate(
       ...(renewalData.renewal_cost !== undefined && { renewal_cost: renewalData.renewal_cost }),
       ...(renewalData.notes && { notes: renewalData.notes }),
       status: computeStatus(renewalData.new_expiry_date),
+      renewal_stage: 'not_started',  // reset the renewal workflow for the new period
       version_history: newHistory,
       notification_log: [],  // reset notification log for new expiry period
       updated_at: new Date().toISOString(),

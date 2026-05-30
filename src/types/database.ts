@@ -156,6 +156,7 @@ export interface Certificate {
   buyer_tags: string[];
   buyer_visible: boolean;
   status: 'active' | 'expiring_soon' | 'expired';
+  renewal_stage?: RenewalStage;
   version_history: VersionHistoryEntry[];
   notification_log: NotificationLogEntry[];
   google_drive_file_id?: string | null;
@@ -163,6 +164,19 @@ export interface Certificate {
   created_by?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export type RenewalStage = 'not_started' | 'in_progress' | 'awaiting_issuer' | 'renewed';
+
+export interface CertDocument {
+  id: string;
+  cert_id: string;
+  cert_type: 'internal' | 'supplier';
+  doc_type: 'certificate' | 'test_report' | 'scope_annex' | 'other';
+  file_name: string;
+  google_drive_file_id: string;
+  uploaded_by?: string | null;
+  uploaded_at: string;
 }
 
 export interface Supplier {
@@ -208,6 +222,7 @@ export interface SupplierCert {
   location_id?: string | null;
   buyer_links: string[];
   status: 'pending_review' | 'approved' | 'rejected' | 'expired' | 'expiring_soon';
+  renewal_stage?: RenewalStage;
   submission_date?: string | null;
   ocr_result: OcrResult | Record<string, unknown>;
   review: ReviewEntry | Record<string, unknown>;

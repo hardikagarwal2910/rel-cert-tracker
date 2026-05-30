@@ -45,6 +45,18 @@ export async function getAuditLog(filters?: AuditFilter): Promise<AuditLog[]> {
   return (data as AuditLog[]) ?? [];
 }
 
+export async function getDistinctActionTypes(): Promise<string[]> {
+  const { data, error } = await adminClient
+    .from('audit_log')
+    .select('action_type')
+    .order('action_type', { ascending: true })
+    .limit(2000);
+  if (error) throw error;
+  const set = new Set<string>();
+  for (const row of (data as { action_type: string }[]) ?? []) set.add(row.action_type);
+  return Array.from(set).sort();
+}
+
 export async function exportAuditLogCsv(): Promise<string> {
   const { data, error } = await adminClient
     .from('audit_log')

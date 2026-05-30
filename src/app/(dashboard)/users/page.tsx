@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getUsers } from '@/lib/db/users';
+import UserActiveToggle from './UserActiveToggle';
 
 export default async function UsersPage() {
   const headersList = headers();
@@ -47,11 +48,7 @@ export default async function UsersPage() {
                     {u.last_login ? new Date(u.last_login).toLocaleDateString() : 'Never'}
                   </td>
                   <td className="px-4 py-2">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                      u.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {u.active ? 'Active' : 'Inactive'}
-                    </span>
+                    <UserActiveToggle userId={u.id} initialActive={u.active} />
                   </td>
                 </tr>
               ))

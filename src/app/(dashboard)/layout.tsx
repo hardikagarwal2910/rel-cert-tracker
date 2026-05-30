@@ -3,6 +3,8 @@ import { headers } from 'next/headers';
 import { getPendingReviewQueue } from '@/lib/db/supplier-certs';
 import Sidebar, { type NavLink } from './Sidebar';
 import SearchBox from './SearchBox';
+import SignOutButton from './SignOutButton';
+import { APP_VERSION } from '@/lib/version';
 
 const navLinks: NavLink[] = [
   { href: '/', label: 'Dashboard' },
@@ -50,15 +52,9 @@ export default async function DashboardLayout({
           </span>
         </div>
         <Sidebar links={navLinks} pendingCount={pendingCount} role={userRole} />
-        <div className="p-4 border-t border-gray-200">
-          <form action="/api/auth/logout" method="POST">
-            <button
-              type="submit"
-              className="text-sm text-gray-500 hover:text-gray-700 w-full text-left"
-            >
-              Sign out
-            </button>
-          </form>
+        <div className="p-4 border-t border-gray-200 space-y-2">
+          <SignOutButton />
+          <p className="text-[11px] text-gray-400">v{APP_VERSION}</p>
         </div>
       </aside>
 

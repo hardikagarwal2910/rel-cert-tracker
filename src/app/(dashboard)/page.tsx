@@ -2,6 +2,7 @@ import { getCertificates, getExpiringSoon } from '@/lib/db/certificates';
 import { getPendingReviewQueue } from '@/lib/db/supplier-certs';
 import { getLastCronRun } from '@/lib/db/notification-log';
 import Link from 'next/link';
+import ActionQueuePanel from './ActionQueuePanel';
 
 export default async function DashboardPage() {
   const [allCerts, expiring7, expiring30, pendingQueue, lastCronRun] = await Promise.all([
@@ -39,6 +40,9 @@ export default async function DashboardPage() {
           Export Audit Report
         </a>
       </div>
+
+      {/* Action Queue — what needs attention */}
+      <ActionQueuePanel />
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5 mb-8">
         <div className="rounded-lg border border-gray-200 p-4 bg-white shadow-sm">

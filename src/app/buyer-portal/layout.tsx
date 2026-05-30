@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { getBuyerById } from '@/lib/db/buyers';
 import BuyerLogout from './BuyerLogout';
+import { APP_VERSION } from '@/lib/version';
 
 export default async function BuyerPortalLayout({ children }: { children: React.ReactNode }) {
   const headersList = headers();
@@ -47,6 +48,10 @@ export default async function BuyerPortalLayout({ children }: { children: React.
       </nav>
 
       <main className="max-w-5xl mx-auto px-6 py-8">{children}</main>
+
+      <footer className="py-4 text-center">
+        <p className="text-[11px] text-gray-400">REL Compliance Portal · v{APP_VERSION}</p>
+      </footer>
     </div>
   );
 }
