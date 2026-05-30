@@ -17,6 +17,9 @@ const PUBLIC_ROUTES = [
   // POST (buyer request) + token-gated approve/deny email links are
   // authless by design; the GET list still enforces admin in-handler.
   '/api/pdf-requests',
+  // Vercel cron hits this with only the CRON_SECRET (no session); the route
+  // self-gates via the secret. The POST manual trigger still calls requireAuth.
+  '/api/cron',
 ];
 
 function isPublicRoute(pathname: string): boolean {
