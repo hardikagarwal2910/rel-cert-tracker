@@ -75,3 +75,11 @@ export async function updateLastLogin(id: string): Promise<void> {
     .update({ last_login: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq('id', id);
 }
+
+export async function setTwoFactor(userId: string, enabled: boolean): Promise<void> {
+  const { error } = await adminClient
+    .from('users')
+    .update({ two_factor_enabled: enabled, updated_at: new Date().toISOString() })
+    .eq('id', userId);
+  if (error) throw error;
+}

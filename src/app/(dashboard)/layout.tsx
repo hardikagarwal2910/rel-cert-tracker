@@ -1,16 +1,19 @@
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 import { headers } from 'next/headers';
 import { getPendingReviewQueue } from '@/lib/db/supplier-certs';
+import Sidebar, { type NavLink } from './Sidebar';
+import SearchBox from './SearchBox';
 
-const navLinks = [
+const navLinks: NavLink[] = [
   { href: '/', label: 'Dashboard' },
   { href: '/certificates', label: 'Certificates' },
+  { href: '/calendar', label: 'Calendar' },
   { href: '/bulk-import', label: 'Bulk Import' },
   { href: '/locations', label: 'Locations' },
   { href: '/suppliers', label: 'Suppliers' },
   { href: '/review-queue', label: 'Review Queue', badge: true },
   { href: '/pdf-requests', label: 'PDF Requests' },
+  { href: '/renewal-workload', label: 'Renewal Workload' },
   { href: '/audit-pack', label: 'Audit Pack' },
   { href: '/users', label: 'Users' },
   { href: '/audit-log', label: 'Audit Log' },
@@ -44,28 +47,7 @@ export default async function DashboardLayout({
             REL Cert Tracker
           </span>
         </div>
-        <nav className="flex-1 overflow-y-auto py-4">
-          <ul className="space-y-1 px-2">
-            {navLinks.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className="flex items-center justify-between px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-200 hover:text-gray-900 transition-colors"
-                >
-                  <span>{link.label}</span>
-                  {link.badge && pendingCount > 0 && (
-                    <span
-                      className="ml-2 inline-flex items-center justify-center rounded-full text-xs font-medium px-2 py-0.5"
-                      style={{ backgroundColor: '#F5C400', color: '#333' }}
-                    >
-                      {pendingCount}
-                    </span>
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <Sidebar links={navLinks} pendingCount={pendingCount} />
         <div className="p-4 border-t border-gray-200">
           <form action="/api/auth/logout" method="POST">
             <button
@@ -81,11 +63,9 @@ export default async function DashboardLayout({
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
-          <span className="text-base font-semibold" style={{ color: '#878687' }}>
-            REL Cert Tracker
-          </span>
-          <span className="text-sm text-gray-600">{userName}</span>
+        <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0 gap-4">
+          <SearchBox />
+          <span className="text-sm text-gray-600 flex-shrink-0">{userName}</span>
         </header>
 
         {/* Page content */}

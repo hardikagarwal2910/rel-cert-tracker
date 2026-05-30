@@ -103,6 +103,7 @@ export interface User {
   email?: string | null;
   role: 'admin' | 'staff';
   active: boolean;
+  two_factor_enabled?: boolean;
   last_login?: string | null;
   last_action?: string | null;
   created_at: string;

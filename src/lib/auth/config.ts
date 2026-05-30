@@ -2,6 +2,7 @@ import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { getUserByUsername, updateLastLogin } from '@/lib/db/users';
+import { verifyOtpToken } from '@/lib/auth/otp-token';
 
 // Secret is validated lazily at runtime (not build time)
 const secret = process.env.NEXTAUTH_SECRET ?? '';
@@ -13,6 +14,7 @@ export const authConfig: NextAuthConfig = {
       credentials: {
         username: { label: 'Username', type: 'text' },
         password: { label: 'Password', type: 'password' },
+        otpToken: { label: 'OTP Token', type: 'text' },
       },
       async authorize(credentials) {
         // Validate secret at runtime
@@ -35,6 +37,15 @@ export const authConfig: NextAuthConfig = {
           user.password_hash
         );
         if (!valid) return null;
+
+        // If the user has 2FA enabled, require a valid OTP proof token.
+        // (Non-2FA users are unaffected — existing logins work as before.)
+        if (user.two_factor_enabled) {
+          const otpToken = credentials.otpToken as string | undefined;
+          if (!otpToken) return null;
+          const verifiedUserId = await verifyOtpToken(otpToken);
+          if (verifiedUserId !== user.id) return null;
+        }
 
         await updateLastLogin(user.id);
 
