@@ -26,6 +26,14 @@ function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
 }
 
+// Supplier portal pages are served at root-level routes from the
+// (supplier-portal) route group and authenticate themselves via the
+// rel_supplier_token cookie — they must NOT be gated by the admin session check.
+const SUPPLIER_PORTAL_PAGES = ['/dashboard', '/my-certs', '/required', '/upload'];
+function isSupplierPortalPage(pathname: string): boolean {
+  return SUPPLIER_PORTAL_PAGES.some((p) => pathname === p || pathname.startsWith(p + '/'));
+}
+
 // ── CORS ──────────────────────────────────────────────────────────────────────
 // Only the configured app origin is allowed to make credentialed cross-origin
 // requests. We never use a wildcard origin together with credentials.
@@ -94,25 +102,28 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     return withCors(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 
-  // Dashboard and admin API routes — verify NextAuth JWT
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/(dashboard)') || pathname.startsWith('/api/')) {
-    const token = await getSessionToken(req);
-
-    if (!token) {
-      if (pathname.startsWith('/api/')) {
-        return withCors(NextResponse.json({ error: 'Authentication required' }, { status: 401 }));
-      }
-      return NextResponse.redirect(new URL('/login', req.url));
-    }
-
-    const requestHeaders = new Headers(req.headers);
-    requestHeaders.set('x-user-id', token.id as string);
-    requestHeaders.set('x-user-role', token.role as string);
-    requestHeaders.set('x-user-name', token.username as string);
-    return withCors(NextResponse.next({ request: { headers: requestHeaders } }));
+  // Supplier portal pages self-authenticate via their own cookie — pass through.
+  if (isSupplierPortalPage(pathname)) {
+    return withCors(NextResponse.next());
   }
 
-  return withCors(NextResponse.next());
+  // Everything else is a protected admin/staff surface: the dashboard pages
+  // (served from the (dashboard) route group at root level — /, /certificates,
+  // /suppliers, …) and the admin API routes. All require a NextAuth session.
+  const token = await getSessionToken(req);
+
+  if (!token) {
+    if (pathname.startsWith('/api/')) {
+      return withCors(NextResponse.json({ error: 'Authentication required' }, { status: 401 }));
+    }
+    return NextResponse.redirect(new URL('/login', req.url));
+  }
+
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set('x-user-id', token.id as string);
+  requestHeaders.set('x-user-role', token.role as string);
+  requestHeaders.set('x-user-name', token.username as string);
+  return withCors(NextResponse.next({ request: { headers: requestHeaders } }));
 }
 
 export const config = {

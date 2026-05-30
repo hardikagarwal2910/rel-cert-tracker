@@ -79,12 +79,21 @@ describe('CORS middleware', () => {
     expect(res.status).toBe(401);
   });
 
-  it('unauthenticated dashboard page → redirect to /login', async () => {
+  it('unauthenticated admin page → redirect to /login', async () => {
     const { middleware } = require('@/middleware');
-    const req = new NextRequest('http://localhost/dashboard');
+    // /certificates is an admin page served from the (dashboard) route group
+    const req = new NextRequest('http://localhost/certificates');
     const res = await middleware(req);
     // NextResponse.redirect → 307/308
     expect([307, 308]).toContain(res.status);
+  });
+
+  it('supplier portal page (/dashboard) is not gated by the admin check', async () => {
+    const { middleware } = require('@/middleware');
+    const req = new NextRequest('http://localhost/dashboard');
+    const res = await middleware(req);
+    // Passes through to self-authenticate (no admin redirect)
+    expect(res.status).toBe(200);
   });
 
   it('request with no Origin header gets no allow-origin', async () => {
