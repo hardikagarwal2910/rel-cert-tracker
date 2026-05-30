@@ -22,6 +22,23 @@ export async function getPendingReviewQueue(): Promise<SupplierCert[]> {
   return (data as SupplierCert[]) ?? [];
 }
 
+export async function getExpiringSupplierCerts(days: number): Promise<SupplierCert[]> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const future = new Date(today);
+  future.setDate(future.getDate() + days);
+
+  const { data, error } = await adminClient
+    .from('supplier_certs')
+    .select('*')
+    .eq('status', 'approved')
+    .gte('expiry_date', today.toISOString().split('T')[0])
+    .lte('expiry_date', future.toISOString().split('T')[0])
+    .order('expiry_date', { ascending: true });
+  if (error) throw error;
+  return (data as SupplierCert[]) ?? [];
+}
+
 export async function getSupplierCertById(id: string): Promise<SupplierCert | null> {
   const { data, error } = await adminClient
     .from('supplier_certs')

@@ -6,6 +6,7 @@ import { getPendingReviewQueue } from '@/lib/db/supplier-certs';
 const navLinks = [
   { href: '/', label: 'Dashboard' },
   { href: '/certificates', label: 'Certificates' },
+  { href: '/bulk-import', label: 'Bulk Import' },
   { href: '/locations', label: 'Locations' },
   { href: '/suppliers', label: 'Suppliers' },
   { href: '/review-queue', label: 'Review Queue', badge: true },

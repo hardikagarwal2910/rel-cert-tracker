@@ -147,25 +147,67 @@ export async function updateSupplier(
 export async function getSupplierScorecard(supplierId: string): Promise<Scorecard> {
   const { data, error } = await adminClient
     .from('supplier_certs')
-    .select('status, submission_date')
+    .select('status, submission_date, expiry_date, cert_name')
     .eq('supplier_id', supplierId);
   if (error) throw error;
 
-  const certs = data ?? [];
+  type ScCert = {
+    status: string;
+    submission_date?: string | null;
+    expiry_date?: string | null;
+    cert_name?: string | null;
+  };
+  const certs = (data ?? []) as ScCert[];
   const total = certs.length;
   const approved = certs.filter((c) => c.status === 'approved').length;
   const rejected = certs.filter((c) => c.status === 'rejected').length;
 
+  // ── On-time calculation ─────────────────────────────────────────────────────
+  // A submission is "on time" if it was uploaded before the previously-held
+  // certificate of the same name expired. The first submission of any cert name
+  // has no prior deadline, so it counts as on-time. Pending/rejected items with
+  // no submission date are excluded from the on-time denominator.
+  const byName = new Map<string, ScCert[]>();
+  for (const c of certs) {
+    if (!c.submission_date) continue;
+    const key = c.cert_name ?? '';
+    const arr = byName.get(key) ?? [];
+    arr.push(c);
+    byName.set(key, arr);
+  }
+
+  let submittedOnTime = 0;
+  let submittedLate = 0;
+  for (const group of Array.from(byName.values())) {
+    group.sort(
+      (a: ScCert, b: ScCert) =>
+        new Date(a.submission_date as string).getTime() -
+        new Date(b.submission_date as string).getTime()
+    );
+    let priorExpiry: string | null = null;
+    for (const c of group) {
+      if (priorExpiry === null) {
+        submittedOnTime++; // initial submission — no prior deadline
+      } else if ((c.submission_date as string) <= priorExpiry) {
+        submittedOnTime++;
+      } else {
+        submittedLate++;
+      }
+      if (c.expiry_date) priorExpiry = c.expiry_date;
+    }
+  }
+
+  const measured = submittedOnTime + submittedLate;
   const complianceRate = total > 0 ? approved / total : 0;
   const submissionQuality = total > 0 ? approved / total : 0;
-  const onTimeRate = 0.8; // Placeholder — real calculation needs deadline data
+  const onTimeRate = measured > 0 ? submittedOnTime / measured : 0;
 
   return {
     total_submissions: total,
     approved,
     rejected,
-    submitted_on_time: Math.round(total * onTimeRate),
-    submitted_late: Math.round(total * (1 - onTimeRate)),
+    submitted_on_time: submittedOnTime,
+    submitted_late: submittedLate,
     compliance_rate: complianceRate,
     submission_quality: submissionQuality,
     on_time_rate: onTimeRate,

@@ -13,7 +13,16 @@
       "maxDuration": 60
     },
     "src/app/api/supplier-certs/[id]/ocr/route.ts": {
-      "maxDuration": 30
+      "maxDuration": 60
+    },
+    "src/app/api/backup/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/audit-report/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/audit-pack/generate/route.ts": {
+      "maxDuration": 60
     }
   }
 }

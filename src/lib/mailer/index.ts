@@ -69,6 +69,7 @@ export async function sendCertExpiryReminder(params: {
 // ─── sendSupplierExpiryReminder ───────────────────────────────────
 export async function sendSupplierExpiryReminder(params: {
   to: string;
+  cc?: string;
   supplierName: string;
   certName: string;
   expiryDate: Date;
@@ -89,7 +90,7 @@ export async function sendSupplierExpiryReminder(params: {
       </a>
     </p>
   `);
-  return sendEmail({ to: params.to, subject, html, certName: params.certName, trigger: `supplier_expiry_${params.daysRemaining}d` });
+  return sendEmail({ to: params.to, cc: params.cc, subject, html, certName: params.certName, trigger: `supplier_expiry_${params.daysRemaining}d` });
 }
 
 // ─── sendPortalInvite ─────────────────────────────────────────────

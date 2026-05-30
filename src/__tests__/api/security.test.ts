@@ -62,12 +62,23 @@ jest.mock('@/lib/db/notification-log', () => ({
   logNotification: jest.fn().mockResolvedValue(undefined),
 }));
 
+// Cron route also runs supplier reminders — provide empty supplier data.
+jest.mock('@/lib/db/supplier-certs', () => ({
+  getExpiringSupplierCerts: jest.fn().mockResolvedValue([]),
+  getSupplierCerts: jest.fn().mockResolvedValue([]),
+}));
+
+jest.mock('@/lib/db/suppliers', () => ({
+  getSupplierById: jest.fn().mockResolvedValue(null),
+}));
+
 jest.mock('@/lib/db/download-tokens', () => ({
   validateAndUseToken: jest.fn().mockResolvedValue(null),
 }));
 
 jest.mock('@/lib/mailer', () => ({
   sendCertExpiryReminder: jest.fn().mockResolvedValue({ success: true }),
+  sendSupplierExpiryReminder: jest.fn().mockResolvedValue({ success: true }),
   sendPortalInvite: jest.fn().mockResolvedValue({ success: true }),
 }));
 
