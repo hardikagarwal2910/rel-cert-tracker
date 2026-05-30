@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
 import { verifySupplierToken, verifyBuyerToken } from '@/lib/auth/middleware';
+import { getSessionToken } from '@/lib/auth/session-token';
 
 // Public routes that require no authentication
 const PUBLIC_ROUTES = [
@@ -96,7 +96,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
 
   // Dashboard and admin API routes — verify NextAuth JWT
   if (pathname.startsWith('/dashboard') || pathname.startsWith('/(dashboard)') || pathname.startsWith('/api/')) {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getSessionToken(req);
 
     if (!token) {
       if (pathname.startsWith('/api/')) {

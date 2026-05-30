@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
 import { jwtVerify } from 'jose';
+import { getSessionToken } from '@/lib/auth/session-token';
 
 const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET ?? '');
 
@@ -73,7 +73,7 @@ export async function requireAuth(
   | { id: string; role: string; username: string; email: string }
   | NextResponse
 > {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const token = await getSessionToken(req);
 
   if (!token) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });

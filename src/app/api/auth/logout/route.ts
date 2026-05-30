@@ -8,11 +8,15 @@ export async function POST(req: NextRequest) {
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown';
 
     const cookieStore = await cookies();
-    // Clear NextAuth session cookie
+    // Clear NextAuth (Auth.js v5) session cookies — both secure and non-secure
+    // variants, plus the legacy next-auth names for safety.
+    cookieStore.delete('authjs.session-token');
+    cookieStore.delete('__Secure-authjs.session-token');
     cookieStore.delete('next-auth.session-token');
     cookieStore.delete('__Secure-next-auth.session-token');
-    // Clear supplier JWT cookie
+    // Clear supplier + buyer JWT cookies
     cookieStore.delete('rel_supplier_token');
+    cookieStore.delete('rel_buyer_token');
 
     appendAuditLog({
       action_type: 'auth.logout',
