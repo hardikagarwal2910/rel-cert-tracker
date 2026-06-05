@@ -4,12 +4,21 @@ import { getCategories } from '@/lib/db/categories';
 import { getLocations } from '@/lib/db/locations';
 import CertFilterClient from './CertFilterClient';
 
-export default async function CertificatesPage() {
+export default async function CertificatesPage({
+  searchParams,
+}: {
+  searchParams?: { archived?: string };
+}) {
+  const archivedView = searchParams?.archived === 'true';
+
   const [certs, categories, locations] = await Promise.all([
-    getCertificates().catch(() => []),
+    getCertificates(archivedView ? { archived: true } : undefined).catch(() => []),
     getCategories(true).catch(() => []),
     getLocations().catch(() => []),
   ]);
+
+  const tabCls = (active: boolean) =>
+    `px-3 py-1.5 text-sm rounded ${active ? 'font-medium text-gray-800 bg-gray-100' : 'text-gray-500 hover:text-gray-700'}`;
 
   return (
     <div>
@@ -25,10 +34,17 @@ export default async function CertificatesPage() {
           + New Certificate
         </Link>
       </div>
+
+      <div className="flex gap-1 mb-4">
+        <Link href="/certificates" className={tabCls(!archivedView)}>Active</Link>
+        <Link href="/certificates?archived=true" className={tabCls(archivedView)}>Archived</Link>
+      </div>
+
       <CertFilterClient
         certs={certs}
         categories={categories.map((c) => c.name)}
         locations={locations.map((l) => ({ id: l.id, name: l.name }))}
+        archivedView={archivedView}
       />
     </div>
   );

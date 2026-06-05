@@ -15,11 +15,13 @@ export async function getSupplierCerts(supplierId: string): Promise<SupplierCert
 export async function getPendingReviewQueue(): Promise<SupplierCert[]> {
   const { data, error } = await adminClient
     .from('supplier_certs')
-    .select('*, suppliers(name)')
+    .select('*, suppliers(name, status)')
     .eq('status', 'pending_review')
     .order('submission_date', { ascending: true });
   if (error) throw error;
-  return (data as SupplierCert[]) ?? [];
+  // Soft-delete: don't surface review prompts for archived (inactive) suppliers.
+  const rows = (data as (SupplierCert & { suppliers?: { name: string; status: string } | null })[]) ?? [];
+  return rows.filter((r) => r.suppliers?.status !== 'inactive') as SupplierCert[];
 }
 
 export async function getExpiringSupplierCerts(days: number): Promise<SupplierCert[]> {

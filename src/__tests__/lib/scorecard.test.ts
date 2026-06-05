@@ -8,7 +8,7 @@ let scRows: Array<Record<string, unknown>> = [];
 
 jest.mock('@/lib/supabase/admin', () => {
   const chain: Record<string, unknown> = {};
-  for (const m of ['from', 'select', 'eq', 'order', 'gte', 'lte', 'contains', 'update', 'insert']) {
+  for (const m of ['from', 'select', 'eq', 'neq', 'order', 'gte', 'lte', 'contains', 'update', 'insert']) {
     chain[m] = jest.fn(() => chain);
   }
   // Make the chain awaitable: resolves to { data: scRows, error: null }

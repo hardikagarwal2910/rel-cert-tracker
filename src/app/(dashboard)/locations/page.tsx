@@ -1,5 +1,6 @@
 import { getLocations, getCertCountByLocation } from '@/lib/db/locations';
 import AddLocationForm from './AddLocationForm';
+import LocationActiveControl from './LocationActiveControl';
 
 export default async function LocationsPage() {
   const [locations, counts] = await Promise.all([
@@ -25,12 +26,13 @@ export default async function LocationsPage() {
                   <th className="px-4 py-2">State</th>
                   <th className="px-4 py-2">Certificates</th>
                   <th className="px-4 py-2">Active</th>
+                  <th className="px-4 py-2 text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {locations.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-gray-500">No locations found.</td>
+                    <td colSpan={6} className="px-4 py-6 text-center text-gray-500">No locations found.</td>
                   </tr>
                 ) : (
                   locations.map((loc) => (
@@ -43,6 +45,9 @@ export default async function LocationsPage() {
                         <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${loc.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
                           {loc.active ? 'Active' : 'Inactive'}
                         </span>
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        <LocationActiveControl locationId={loc.id} active={loc.active} certCount={countMap.get(loc.id) ?? 0} />
                       </td>
                     </tr>
                   ))

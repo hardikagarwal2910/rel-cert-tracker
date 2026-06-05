@@ -2,8 +2,16 @@ import Link from 'next/link';
 import { getSuppliers } from '@/lib/db/suppliers';
 import SuppliersClient from './SuppliersClient';
 
-export default async function SuppliersPage() {
-  const suppliers = await getSuppliers().catch(() => []);
+export default async function SuppliersPage({
+  searchParams,
+}: {
+  searchParams?: { inactive?: string };
+}) {
+  const showInactive = searchParams?.inactive === 'true';
+  const suppliers = await getSuppliers(showInactive ? { includeInactive: true } : undefined).catch(() => []);
+
+  const tabCls = (active: boolean) =>
+    `px-3 py-1.5 text-sm rounded ${active ? 'font-medium text-gray-800 bg-gray-100' : 'text-gray-500 hover:text-gray-700'}`;
 
   return (
     <div>
@@ -17,6 +25,12 @@ export default async function SuppliersPage() {
           Bulk Onboard
         </Link>
       </div>
+
+      <div className="flex gap-1 mb-4">
+        <Link href="/suppliers" className={tabCls(!showInactive)}>Active</Link>
+        <Link href="/suppliers?inactive=true" className={tabCls(showInactive)}>All (incl. inactive)</Link>
+      </div>
+
       <SuppliersClient suppliers={suppliers} />
     </div>
   );

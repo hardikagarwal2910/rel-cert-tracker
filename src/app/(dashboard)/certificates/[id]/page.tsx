@@ -6,6 +6,7 @@ import { differenceInCalendarDays } from 'date-fns';
 import Link from 'next/link';
 import BuyerVisibilityEditor from './BuyerVisibilityEditor';
 import RenewalStageControl from './RenewalStageControl';
+import CertArchiveControl from './CertArchiveControl';
 
 const statusBadge = (status: string) => {
   if (status === 'active') return 'bg-green-100 text-green-800';
@@ -64,8 +65,17 @@ export default async function CertDetailPage({ params }: Props) {
         <div className="flex gap-2">
           <Link href={`/certificates/${cert.id}/edit`} className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50">Edit</Link>
           <Link href={`/certificates/${cert.id}/upload-pdf`} className="px-3 py-1.5 text-sm rounded font-medium" style={{ backgroundColor: '#F5C400', color: '#333' }}>Upload Document</Link>
+          <CertArchiveControl certId={cert.id} archived={!!cert.archived} />
         </div>
       </div>
+
+      {cert.archived && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 mb-6 text-sm text-amber-800">
+          This certificate is <span className="font-semibold">archived</span> — hidden from the active list and
+          all buyer views. Use <span className="font-medium">Restore</span> to bring it back (it stays
+          buyer-invisible until you re-enable visibility).
+        </div>
+      )}
 
       {/* LEAD: status + next action */}
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm p-6 mb-6">

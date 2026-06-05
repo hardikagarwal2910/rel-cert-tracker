@@ -157,6 +157,9 @@ export interface Certificate {
   buyer_visible: boolean;
   status: 'active' | 'expiring_soon' | 'expired';
   renewal_stage?: RenewalStage;
+  archived?: boolean;
+  archived_at?: string | null;
+  archived_by?: string | null;
   version_history: VersionHistoryEntry[];
   notification_log: NotificationLogEntry[];
   google_drive_file_id?: string | null;

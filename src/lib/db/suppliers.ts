@@ -43,7 +43,13 @@ function computeChecklist(supplier: Partial<Supplier>): OnboardingChecklist {
 export async function getSuppliers(filters?: SupplierFilter): Promise<Supplier[]> {
   let query = adminClient.from('suppliers').select('*');
   if (filters?.tier) query = query.eq('tier', filters.tier);
-  if (filters?.status) query = query.eq('status', filters.status);
+  if (filters?.status) {
+    // An explicit status filter takes precedence (incl. requesting 'inactive').
+    query = query.eq('status', filters.status);
+  } else if (!filters?.includeInactive) {
+    // Soft-delete: hide archived (inactive) suppliers from the default list.
+    query = query.neq('status', 'inactive');
+  }
   if (filters?.buyer_link)
     query = query.contains('buyer_links', JSON.stringify([filters.buyer_link]));
   if (filters?.commodity)
@@ -136,6 +142,49 @@ export async function updateSupplier(
   const { data, error } = await adminClient
     .from('suppliers')
     .update(update)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  const s = data as Supplier;
+  return { ...s, contacts: decryptContacts(s.contacts) };
+}
+
+/**
+ * Archive (retire) a supplier — soft delete by reusing the existing status
+ * enum. Sets status='inactive'. The record is never hard-deleted.
+ */
+export async function archiveSupplier(id: string): Promise<Supplier> {
+  const { data, error } = await adminClient
+    .from('suppliers')
+    .update({ status: 'inactive', updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  const s = data as Supplier;
+  return { ...s, contacts: decryptContacts(s.contacts) };
+}
+
+/**
+ * Reactivate an archived supplier. Restores to 'active' if its onboarding
+ * checklist is complete, otherwise back to 'onboarding'.
+ */
+export async function reactivateSupplier(id: string): Promise<Supplier> {
+  const existing = await getSupplierById(id);
+  const cl = existing?.onboarding_checklist;
+  const complete = !!(
+    cl &&
+    cl.contacts_added &&
+    cl.required_certs_defined &&
+    cl.invite_sent &&
+    cl.invite_accepted &&
+    cl.first_cert_uploaded
+  );
+  const status: Supplier['status'] = complete ? 'active' : 'onboarding';
+  const { data, error } = await adminClient
+    .from('suppliers')
+    .update({ status, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single();

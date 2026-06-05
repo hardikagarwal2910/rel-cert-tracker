@@ -44,6 +44,11 @@ export interface CertFilter {
   status?: string;
   buyer_visible?: boolean;
   view?: 'internal' | 'supplier' | 'all';
+  // Soft-delete (v1.1.1). By default getCertificates returns only non-archived
+  // certs. `archived: true` returns ONLY archived; `includeArchived: true`
+  // returns both.
+  archived?: boolean;
+  includeArchived?: boolean;
 }
 
 export interface SupplierFilter {
@@ -51,6 +56,9 @@ export interface SupplierFilter {
   buyer_link?: string;
   status?: string;
   commodity?: string;
+  // Soft-delete (v1.1.1). By default getSuppliers excludes status='inactive'
+  // unless a specific `status` is requested or `includeInactive` is set.
+  includeInactive?: boolean;
 }
 
 export interface AuditFilter {

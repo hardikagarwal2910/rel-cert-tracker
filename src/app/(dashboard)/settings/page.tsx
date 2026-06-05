@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
+
+interface CategoryRow {
+  id: string;
+  name: string;
+  active: boolean;
+}
 
 export default function SettingsPage() {
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -17,14 +23,49 @@ export default function SettingsPage() {
   const [catName, setCatName] = useState('');
   const [catLoading, setCatLoading] = useState(false);
   const [catMsg, setCatMsg] = useState('');
+  const [categories, setCategories] = useState<CategoryRow[]>([]);
+  const [confirmingCatId, setConfirmingCatId] = useState<string | null>(null);
+  const [catActionId, setCatActionId] = useState<string | null>(null);
 
-  // Load current 2FA state on mount.
+  const loadCategories = useCallback(async () => {
+    try {
+      const res = await fetch('/api/categories');
+      if (res.ok) setCategories((await res.json()) as CategoryRow[]);
+    } catch {
+      /* non-fatal */
+    }
+  }, []);
+
+  // Load current 2FA state + category list on mount.
   useEffect(() => {
     fetch('/api/users/me/2fa')
       .then((r) => (r.ok ? r.json() : { enabled: false }))
       .then((d) => setTwoFactor(Boolean(d.enabled)))
       .catch(() => setTwoFactor(false));
-  }, []);
+    loadCategories();
+  }, [loadCategories]);
+
+  const deactivateCategory = async (id: string) => {
+    setCatActionId(id);
+    setCatMsg('');
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error ?? 'Failed');
+      }
+      await loadCategories();
+    } catch (err) {
+      setCatMsg(err instanceof Error ? err.message : 'Error');
+    } finally {
+      setCatActionId(null);
+      setConfirmingCatId(null);
+    }
+  };
 
   const toggleTwoFactor = async () => {
     if (twoFactor === null) return;
@@ -107,6 +148,7 @@ export default function SettingsPage() {
       if (!res.ok) throw new Error(d.error ?? 'Failed');
       setCatMsg(`Category "${catName}" added.`);
       setCatName('');
+      await loadCategories();
     } catch (err) {
       setCatMsg(err instanceof Error ? err.message : 'Error');
     } finally {
@@ -221,14 +263,54 @@ export default function SettingsPage() {
 
       {/* Category management */}
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm p-5">
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Add Category</h2>
+        <h2 className="text-sm font-semibold text-gray-700 mb-3">Categories</h2>
         {catMsg && <p className="text-sm mb-2 text-gray-600">{catMsg}</p>}
+
+        {categories.length > 0 && (
+          <ul className="mb-4 divide-y divide-gray-100 border border-gray-100 rounded">
+            {categories.map((c) => (
+              <li key={c.id} className="flex items-center justify-between px-3 py-2 text-sm">
+                <span className={c.active ? 'text-gray-800' : 'text-gray-400 line-through'}>{c.name}</span>
+                {c.active ? (
+                  confirmingCatId === c.id ? (
+                    <span className="inline-flex items-center gap-1 text-xs">
+                      <span className="text-gray-500">Retire?</span>
+                      <button
+                        onClick={() => deactivateCategory(c.id)}
+                        disabled={catActionId === c.id}
+                        className="px-2 py-0.5 rounded text-white disabled:opacity-50"
+                        style={{ backgroundColor: '#d9534f' }}
+                      >
+                        {catActionId === c.id ? '…' : 'Confirm'}
+                      </button>
+                      <button onClick={() => setConfirmingCatId(null)} className="px-2 py-0.5 rounded border border-gray-300 text-gray-500">Cancel</button>
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmingCatId(c.id)}
+                      className="text-xs px-2 py-0.5 rounded border border-gray-200 hover:bg-gray-50 text-gray-600"
+                    >
+                      Deactivate
+                    </button>
+                  )
+                ) : (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Inactive</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <p className="text-xs text-gray-400 mb-2">
+          Deactivated categories stay on existing certificates but no longer appear in the new-certificate dropdown.
+        </p>
+
         <form onSubmit={handleAddCategory} className="flex gap-2">
           <input
             type="text"
             value={catName}
             onChange={(e) => setCatName(e.target.value)}
-            placeholder="Category name"
+            placeholder="New category name"
             className="flex-1 border border-gray-300 rounded px-3 py-1.5 text-sm"
           />
           <button

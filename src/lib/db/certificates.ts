@@ -15,6 +15,16 @@ function computeStatus(expiryDate: string): 'active' | 'expiring_soon' | 'expire
 export async function getCertificates(filters?: CertFilter): Promise<Certificate[]> {
   let query = adminClient.from('certificates').select('*');
 
+  // Soft-delete: exclude archived by default. `includeArchived` returns both;
+  // `archived: true` returns only archived (the "Archived" list view).
+  if (filters?.includeArchived) {
+    // no archived constraint — return active + archived
+  } else if (filters?.archived) {
+    query = query.eq('archived', true);
+  } else {
+    query = query.eq('archived', false);
+  }
+
   if (filters?.category) query = query.eq('category', filters.category);
   if (filters?.location_id) query = query.eq('location_id', filters.location_id);
   if (filters?.buyer_visible !== undefined) query = query.eq('buyer_visible', filters.buyer_visible);
@@ -60,6 +70,7 @@ export async function getBuyerVisibleCertificates(
     .select('*')
     .eq('buyer_visible', true)
     .eq('submitted_by_supplier', false)
+    .eq('archived', false)
     .order('expiry_date', { ascending: true });
   if (error) throw error;
 
@@ -159,6 +170,50 @@ export async function deleteCertificate(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Soft-delete a certificate. Sets archived=true (+ who/when) and CRITICALLY
+ * forces buyer_visible=false so the cert immediately disappears from every
+ * buyer-facing read. The record and its history are preserved.
+ */
+export async function archiveCertificate(id: string, userId?: string): Promise<Certificate> {
+  const { data, error } = await adminClient
+    .from('certificates')
+    .update({
+      archived: true,
+      archived_at: new Date().toISOString(),
+      archived_by: userId ?? null,
+      buyer_visible: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  const cert = data as Certificate;
+  return { ...cert, status: computeStatus(cert.expiry_date) };
+}
+
+/**
+ * Restore an archived certificate to the active list. buyer_visible is left
+ * OFF — an admin re-enables buyer visibility manually if wanted.
+ */
+export async function unarchiveCertificate(id: string): Promise<Certificate> {
+  const { data, error } = await adminClient
+    .from('certificates')
+    .update({
+      archived: false,
+      archived_at: null,
+      archived_by: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  const cert = data as Certificate;
+  return { ...cert, status: computeStatus(cert.expiry_date) };
+}
+
 export async function getExpiringSoon(days: number): Promise<Certificate[]> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -168,6 +223,7 @@ export async function getExpiringSoon(days: number): Promise<Certificate[]> {
   const { data, error } = await adminClient
     .from('certificates')
     .select('*')
+    .eq('archived', false)
     .gte('expiry_date', today.toISOString().split('T')[0])
     .lte('expiry_date', future.toISOString().split('T')[0])
     .order('expiry_date', { ascending: true });

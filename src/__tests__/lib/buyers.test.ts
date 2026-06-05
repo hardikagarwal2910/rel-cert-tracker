@@ -155,6 +155,15 @@ describe('getBuyerVisibleCertificates — visibility rule', () => {
     );
   });
 
+  it('also excludes archived certs from buyer visibility (archived=false filter)', async () => {
+    mockSelectRows = [internalVisible];
+    (adminClient.eq as jest.Mock).mockClear();
+    await getBuyerVisibleCertificates([]);
+    const eqCalls = (adminClient.eq as jest.Mock).mock.calls;
+    // v1.1.1: archiving a cert must drop it from every buyer-facing read.
+    expect(eqCalls).toEqual(expect.arrayContaining([['archived', false]]));
+  });
+
   it('returns ONLY buyer_visible, non-supplier certs', async () => {
     mockSelectRows = [internalVisible, internalVisibleTata];
     const certs = await getBuyerVisibleCertificates([]);

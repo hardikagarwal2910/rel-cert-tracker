@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getCertificateById } from '@/lib/db/certificates';
 import { getCategories } from '@/lib/db/categories';
-import { getLocations } from '@/lib/db/locations';
+import { getLocations, getLocationById } from '@/lib/db/locations';
 import CertForm from '../../CertForm';
 
 interface Props {
@@ -10,12 +10,20 @@ interface Props {
 }
 
 export default async function EditCertificatePage({ params }: Props) {
-  const [cert, categories, locations] = await Promise.all([
+  const [cert, categories, activeLocations] = await Promise.all([
     getCertificateById(params.id).catch(() => null),
     getCategories(true).catch(() => []),
     getLocations(true).catch(() => []),
   ]);
   if (!cert) notFound();
+
+  // Dropdown shows active locations only — but if this cert references a now-
+  // deactivated location, include it so the existing reference isn't lost on save.
+  const locations = [...activeLocations];
+  if (cert.location_id && !locations.some((l) => l.id === cert.location_id)) {
+    const current = await getLocationById(cert.location_id).catch(() => null);
+    if (current) locations.push(current);
+  }
 
   return (
     <div>

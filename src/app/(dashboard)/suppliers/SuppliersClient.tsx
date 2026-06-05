@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Supplier } from '@/types/database';
 
@@ -19,8 +20,26 @@ const statusBadge = (status: string) => {
 };
 
 export default function SuppliersClient({ suppliers }: Props) {
+  const router = useRouter();
   const [tierFilter, setTierFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [reactivatingId, setReactivatingId] = useState<string | null>(null);
+
+  const hasInactive = useMemo(() => suppliers.some((s) => s.status === 'inactive'), [suppliers]);
+
+  const reactivate = async (id: string) => {
+    setReactivatingId(id);
+    try {
+      const res = await fetch(`/api/suppliers/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reactivate' }),
+      });
+      if (res.ok) router.refresh();
+    } finally {
+      setReactivatingId(null);
+    }
+  };
 
   const filtered = useMemo(() => {
     return suppliers.filter((s) => {
@@ -65,12 +84,13 @@ export default function SuppliersClient({ suppliers }: Props) {
               <th className="px-4 py-2">Tier</th>
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2">Contacts</th>
+              {hasInactive && <th className="px-4 py-2 text-right">Action</th>}
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-gray-500">No suppliers found.</td>
+                <td colSpan={hasInactive ? 5 : 4} className="px-4 py-6 text-center text-gray-500">No suppliers found.</td>
               </tr>
             ) : (
               filtered.map((s) => (
@@ -87,6 +107,20 @@ export default function SuppliersClient({ suppliers }: Props) {
                     </span>
                   </td>
                   <td className="px-4 py-2 text-gray-600">{s.contacts?.length ?? 0}</td>
+                  {hasInactive && (
+                    <td className="px-4 py-2 text-right">
+                      {s.status === 'inactive' ? (
+                        <button
+                          onClick={() => reactivate(s.id)}
+                          disabled={reactivatingId === s.id}
+                          className="px-3 py-1 text-xs rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                          style={{ color: '#878687' }}
+                        >
+                          {reactivatingId === s.id ? '…' : 'Reactivate'}
+                        </button>
+                      ) : null}
+                    </td>
+                  )}
                 </tr>
               ))
             )}

@@ -53,6 +53,14 @@ export async function deactivateLocation(id: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function reactivateLocation(id: string): Promise<void> {
+  const { error } = await adminClient
+    .from('locations')
+    .update({ active: true, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}
+
 export async function getCertCountByLocation(): Promise<
   { location_id: string; count: number }[]
 > {

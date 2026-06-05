@@ -3,6 +3,7 @@ import { getCertificates } from '@/lib/db/certificates';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import SendInviteButton from './SendInviteButton';
+import SupplierArchiveControl from './SupplierArchiveControl';
 
 interface Props {
   params: { id: string };
@@ -41,7 +42,10 @@ export default async function SupplierDetailPage({ params }: Props) {
             {supplier.city ? ` · ${supplier.city}, ${supplier.state}` : ''}
           </p>
         </div>
-        <SendInviteButton supplierId={supplier.id} />
+        <div className="flex items-center gap-2">
+          <SendInviteButton supplierId={supplier.id} />
+          <SupplierArchiveControl supplierId={supplier.id} status={supplier.status} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

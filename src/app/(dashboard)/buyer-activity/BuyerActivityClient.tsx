@@ -27,6 +27,39 @@ interface Visit {
 const TAUPE = '#878687';
 const YELLOW = '#F5C400';
 
+type BuyerAction = 'approve' | 'reject' | 'suspend' | 'reactivate';
+
+// 'reactivate' re-approves a suspended buyer via the existing approve endpoint.
+const ACTION_ENDPOINT: Record<BuyerAction, string> = {
+  approve: 'approve',
+  reject: 'reject',
+  suspend: 'suspend',
+  reactivate: 'approve',
+};
+
+const ACTION_COPY: Record<BuyerAction, { title: string; body: string; confirm: string }> = {
+  approve: {
+    title: 'Approve this buyer?',
+    body: 'They will receive an email with a link to set their password and gain portal access.',
+    confirm: 'Approve',
+  },
+  reject: {
+    title: 'Reject this buyer?',
+    body: 'Their access request will be declined and they will be notified by email.',
+    confirm: 'Reject',
+  },
+  suspend: {
+    title: 'Suspend this buyer?',
+    body: 'They will be blocked from logging in immediately. You can reactivate them later.',
+    confirm: 'Suspend',
+  },
+  reactivate: {
+    title: 'Reactivate this buyer?',
+    body: 'Their access will be restored (re-approved) and a fresh set-password email will be sent.',
+    confirm: 'Reactivate',
+  },
+};
+
 export default function BuyerActivityClient() {
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,6 +67,8 @@ export default function BuyerActivityClient() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [visits, setVisits] = useState<Record<string, Visit[]>>({});
   const [tagDraft, setTagDraft] = useState<Record<string, string>>({});
+  const [confirm, setConfirm] = useState<{ id: string; action: BuyerAction; name: string } | null>(null);
+  const [acting, setActing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,9 +90,16 @@ export default function BuyerActivityClient() {
 
   useEffect(() => { load(); }, [load]);
 
-  const act = async (id: string, action: 'approve' | 'reject' | 'suspend') => {
-    await fetch(`/api/buyers/${id}/${action}`, { method: 'POST' });
-    load();
+  const runAction = async () => {
+    if (!confirm) return;
+    setActing(true);
+    try {
+      await fetch(`/api/buyers/${confirm.id}/${ACTION_ENDPOINT[confirm.action]}`, { method: 'POST' });
+      await load();
+    } finally {
+      setActing(false);
+      setConfirm(null);
+    }
   };
 
   const saveTags = async (id: string) => {
@@ -124,8 +166,8 @@ export default function BuyerActivityClient() {
                       {b.ip_address ?? '—'}{geoStr(b.geolocation) && <><br />{geoStr(b.geolocation)}</>}
                     </td>
                     <td className="px-4 py-2 text-right whitespace-nowrap">
-                      <button onClick={() => act(b.id, 'approve')} className="px-3 py-1 rounded text-xs font-medium mr-2" style={{ backgroundColor: YELLOW, color: '#333' }}>Approve</button>
-                      <button onClick={() => act(b.id, 'reject')} className="px-3 py-1 rounded text-xs font-medium text-white" style={{ backgroundColor: '#d9534f' }}>Reject</button>
+                      <button onClick={() => setConfirm({ id: b.id, action: 'approve', name: b.name })} className="px-3 py-1 rounded text-xs font-medium mr-2" style={{ backgroundColor: YELLOW, color: '#333' }}>Approve</button>
+                      <button onClick={() => setConfirm({ id: b.id, action: 'reject', name: b.name })} className="px-3 py-1 rounded text-xs font-medium text-white" style={{ backgroundColor: '#d9534f' }}>Reject</button>
                     </td>
                   </tr>
                 ))}
@@ -183,7 +225,10 @@ export default function BuyerActivityClient() {
                           {expanded === b.id ? 'Hide' : 'Visits'}
                         </button>
                         {b.status === 'approved' && (
-                          <button onClick={() => act(b.id, 'suspend')} className="px-3 py-1 rounded text-xs font-medium text-white" style={{ backgroundColor: '#d9534f' }}>Suspend</button>
+                          <button onClick={() => setConfirm({ id: b.id, action: 'suspend', name: b.name })} className="px-3 py-1 rounded text-xs font-medium text-white" style={{ backgroundColor: '#d9534f' }}>Suspend</button>
+                        )}
+                        {b.status === 'suspended' && (
+                          <button onClick={() => setConfirm({ id: b.id, action: 'reactivate', name: b.name })} className="px-3 py-1 rounded text-xs font-medium" style={{ backgroundColor: YELLOW, color: '#333' }}>Reactivate</button>
                         )}
                       </td>
                     </tr>
@@ -215,6 +260,33 @@ export default function BuyerActivityClient() {
           )}
         </div>
       </section>
+
+      {confirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => !acting && setConfirm(null)}>
+          <div className="bg-white rounded-lg shadow-lg p-5 max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-sm font-semibold text-gray-800 mb-2">{ACTION_COPY[confirm.action].title}</h3>
+            <p className="text-sm text-gray-600 mb-1"><span className="font-medium">{confirm.name}</span></p>
+            <p className="text-sm text-gray-600 mb-4">{ACTION_COPY[confirm.action].body}</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirm(null)}
+                disabled={acting}
+                className="px-3 py-1.5 text-sm rounded border border-gray-300 text-gray-500 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={runAction}
+                disabled={acting}
+                className="px-3 py-1.5 text-sm rounded text-white disabled:opacity-50"
+                style={{ backgroundColor: confirm.action === 'approve' || confirm.action === 'reactivate' ? TAUPE : '#d9534f' }}
+              >
+                {acting ? '…' : ACTION_COPY[confirm.action].confirm}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

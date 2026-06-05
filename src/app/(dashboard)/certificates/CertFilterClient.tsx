@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Certificate } from '@/types/database';
 
@@ -9,6 +10,7 @@ interface Props {
   certs: Certificate[];
   categories: string[];
   locations: LocationOption[];
+  archivedView?: boolean;
 }
 
 const statusBadge = (status: string) => {
@@ -35,14 +37,30 @@ function stageStyle(stage?: string | null): React.CSSProperties | undefined {
 
 type SortKey = 'name' | 'category' | 'expiry_date' | 'status';
 
-export default function CertFilterClient({ certs, categories, locations }: Props) {
+export default function CertFilterClient({ certs, categories, locations, archivedView = false }: Props) {
+  const router = useRouter();
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('expiry_date');
   const [sortAsc, setSortAsc] = useState(true);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
 
   const locName = useMemo(() => new Map(locations.map((l) => [l.id, l.name])), [locations]);
+
+  const restore = async (id: string) => {
+    setRestoringId(id);
+    try {
+      const res = await fetch(`/api/certificates/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'unarchive' }),
+      });
+      if (res.ok) router.refresh();
+    } finally {
+      setRestoringId(null);
+    }
+  };
 
   const filtered = useMemo(() => {
     const out = certs.filter((c) => {
@@ -99,11 +117,12 @@ export default function CertFilterClient({ certs, categories, locations }: Props
               <th className={thCls} onClick={() => toggleSort('expiry_date')}>Expiry{arrow('expiry_date')}</th>
               <th className="px-3 py-2">Renewal</th>
               <th className={thCls} onClick={() => toggleSort('status')}>Status{arrow('status')}</th>
+              {archivedView && <th className="px-3 py-2 text-right">Action</th>}
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-500">No certificates found.</td></tr>
+              <tr><td colSpan={archivedView ? 7 : 6} className="px-4 py-6 text-center text-gray-500">No certificates found.</td></tr>
             ) : (
               filtered.map((cert) => {
                 const stage = (cert as unknown as { renewal_stage?: string }).renewal_stage;
@@ -127,6 +146,18 @@ export default function CertFilterClient({ certs, categories, locations }: Props
                     <td className="px-3 py-1.5">
                       <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge(cert.status)}`}>{cert.status.replace('_', ' ')}</span>
                     </td>
+                    {archivedView && (
+                      <td className="px-3 py-1.5 text-right">
+                        <button
+                          onClick={() => restore(cert.id)}
+                          disabled={restoringId === cert.id}
+                          className="px-3 py-1 text-xs rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                          style={{ color: '#878687' }}
+                        >
+                          {restoringId === cert.id ? '…' : 'Restore'}
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 );
               })
