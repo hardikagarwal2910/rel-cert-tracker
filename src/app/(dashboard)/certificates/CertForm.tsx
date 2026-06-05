@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { locationLabel } from '@/lib/location-label';
 
 const TAUPE = '#878687';
 const YELLOW = '#F5C400';
@@ -24,6 +25,8 @@ export interface CertFormValues {
 export interface LocationOption {
   id: string;
   name: string;
+  nickname?: string | null;
+  city?: string | null;
 }
 
 export default function CertForm({
@@ -127,7 +130,7 @@ export default function CertForm({
         {field('Location', (
           <select value={form.location_id} onChange={(e) => set('location_id', e.target.value)} className={inputCls}>
             <option value="">— None —</option>
-            {locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+            {locations.map((l) => <option key={l.id} value={l.id}>{locationLabel(l)}</option>)}
           </select>
         ))}
         {field('Renewal Cost (₹)', <input type="number" value={form.renewal_cost} onChange={(e) => set('renewal_cost', e.target.value)} className={inputCls} />)}

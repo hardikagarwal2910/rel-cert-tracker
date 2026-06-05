@@ -126,6 +126,7 @@ export interface UserInput {
 
 export interface LocationInput {
   name: string;
+  nickname?: string;
   address_line_1: string;
   address_line_2?: string;
   city: string;

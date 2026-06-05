@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import { getLocations, getCertCountByLocation } from '@/lib/db/locations';
-import AddLocationForm from './AddLocationForm';
+import { locationAddressOneLine } from '@/lib/location-label';
+import LocationForm from './LocationForm';
 import LocationActiveControl from './LocationActiveControl';
 
 export default async function LocationsPage() {
@@ -21,9 +23,9 @@ export default async function LocationsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 text-left text-xs text-gray-500 uppercase border-b border-gray-200">
-                  <th className="px-4 py-2">Name</th>
-                  <th className="px-4 py-2">City</th>
-                  <th className="px-4 py-2">State</th>
+                  <th className="px-4 py-2">Nickname / Label</th>
+                  <th className="px-4 py-2">Company</th>
+                  <th className="px-4 py-2">Address</th>
                   <th className="px-4 py-2">Certificates</th>
                   <th className="px-4 py-2">Active</th>
                   <th className="px-4 py-2 text-right">Action</th>
@@ -35,22 +37,30 @@ export default async function LocationsPage() {
                     <td colSpan={6} className="px-4 py-6 text-center text-gray-500">No locations found.</td>
                   </tr>
                 ) : (
-                  locations.map((loc) => (
-                    <tr key={loc.id} className="border-t border-gray-100 hover:bg-gray-50">
-                      <td className="px-4 py-2 font-medium text-gray-800">{loc.name}</td>
-                      <td className="px-4 py-2 text-gray-600">{loc.city}</td>
-                      <td className="px-4 py-2 text-gray-600">{loc.state}</td>
-                      <td className="px-4 py-2 text-gray-600">{countMap.get(loc.id) ?? 0}</td>
-                      <td className="px-4 py-2">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${loc.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                          {loc.active ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        <LocationActiveControl locationId={loc.id} active={loc.active} certCount={countMap.get(loc.id) ?? 0} />
-                      </td>
-                    </tr>
-                  ))
+                  locations.map((loc) => {
+                    const nick = loc.nickname?.trim();
+                    return (
+                      <tr key={loc.id} className="border-t border-gray-100 hover:bg-gray-50 align-top">
+                        <td className="px-4 py-2">
+                          <Link href={`/locations/${loc.id}`} className="font-medium text-gray-800 hover:underline">
+                            {nick && nick.length > 0 ? nick : <span className="text-gray-400 italic">{loc.name} (no nickname)</span>}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-2 text-gray-600">{loc.name}</td>
+                        <td className="px-4 py-2 text-gray-600">{locationAddressOneLine(loc)}</td>
+                        <td className="px-4 py-2 text-gray-600">{countMap.get(loc.id) ?? 0}</td>
+                        <td className="px-4 py-2">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${loc.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                            {loc.active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 text-right whitespace-nowrap">
+                          <Link href={`/locations/${loc.id}`} className="text-xs px-2 py-0.5 rounded border border-gray-200 hover:bg-gray-50 text-gray-600 mr-2">View / Edit</Link>
+                          <LocationActiveControl locationId={loc.id} active={loc.active} certCount={countMap.get(loc.id) ?? 0} />
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -58,7 +68,7 @@ export default async function LocationsPage() {
         </div>
 
         <div>
-          <AddLocationForm />
+          <LocationForm mode="create" />
         </div>
       </div>
     </div>

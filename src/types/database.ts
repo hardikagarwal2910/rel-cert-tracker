@@ -75,7 +75,8 @@ export interface Scorecard {
 
 export interface Location {
   id: string;
-  name: string;
+  name: string;                 // legal / company entity name (may repeat)
+  nickname?: string | null;     // short internal label, e.g. "Shilaj Unit"
   address_line_1: string;
   address_line_2?: string | null;
   city: string;

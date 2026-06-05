@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.1.3 — 2026-06-05
+
+### Added
+- **Location nickname / internal label.** Locations now have a short human label (e.g. "Shilaj Unit", "Towel Plant", "Head Office") shown everywhere a location appears. A single app-wide helper (`src/lib/location-label.ts`) renders the label consistently as `Nickname — City`, falling back to `Company — City` when no nickname is set, so two same-company sites are always distinguishable.
+- **Locations detail page** (`/locations/[id]`) showing the complete record: nickname, company name, full multi-line address, country, active status, and how many certificates use it — with an inline Edit form.
+
+### Fixed
+- **Location address was never displayed and locations were indistinguishable.** Multiple sites all stored under the company name "Raghuvir Exim Limited" now show their nickname + full address on the Locations list, the location detail page, and the certificate detail page. The certificate location dropdown (create + edit) now reads e.g. "Shilaj Unit — Ahmedabad" instead of repeating the company name. The location edit form also now persists the full address (previously the address fields could not be edited).
+
+### Notes
+- Migration `006_location_nickname.sql` must be run manually in the Supabase SQL editor (it does not auto-run). It adds a nullable `nickname` column to `locations` (`IF NOT EXISTS`, safe to run). `name` remains the legal/company entity name (may repeat); `nickname` is the distinguishing internal label.
+
 ## v1.1.1 — 2026-06-05
 
 ### Added

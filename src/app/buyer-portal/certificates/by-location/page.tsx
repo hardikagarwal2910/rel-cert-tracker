@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getBuyerById, logBuyerVisit } from '@/lib/db/buyers';
 import { getBuyerVisibleCertificates } from '@/lib/db/certificates';
 import { getLocations } from '@/lib/db/locations';
+import { locationLabel, locationAddressOneLine } from '@/lib/location-label';
 import RequestPdfButton from '../../RequestPdfButton';
 import type { Certificate, Location } from '@/types/database';
 
@@ -43,7 +44,9 @@ export default async function BuyerByLocationPage() {
   const orderedKeys = Array.from(groups.keys()).sort((a, b) => {
     if (a === UNASSIGNED) return 1;
     if (b === UNASSIGNED) return -1;
-    return (locMap.get(a)?.name ?? '').localeCompare(locMap.get(b)?.name ?? '');
+    const la = locMap.get(a);
+    const lb = locMap.get(b);
+    return (la ? locationLabel(la) : '').localeCompare(lb ? locationLabel(lb) : '');
   });
 
   return (
@@ -62,14 +65,12 @@ export default async function BuyerByLocationPage() {
           <div key={key} className="rounded-lg border border-gray-200 bg-white shadow-sm mb-6 overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
               <h2 className="text-sm font-semibold text-gray-700">
-                {loc ? loc.name : 'Unassigned'}
-                {loc && (
-                  <span className="text-gray-400 font-normal">
-                    {' '}— {[loc.city, loc.state].filter(Boolean).join(', ')}
-                  </span>
-                )}
+                {loc ? locationLabel(loc) : 'Unassigned'}
                 <span className="text-gray-400 font-normal"> ({rows.length})</span>
               </h2>
+              {loc && (
+                <p className="text-xs text-gray-400 mt-0.5">{locationAddressOneLine(loc)}</p>
+              )}
             </div>
             <table className="w-full text-sm">
               <thead>

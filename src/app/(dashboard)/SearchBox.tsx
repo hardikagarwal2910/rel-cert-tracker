@@ -15,7 +15,7 @@ interface Hit {
 interface Results {
   certificates: { id: string; name: string; issuing_body?: string | null }[];
   suppliers: { id: string; name: string }[];
-  locations: { id: string; name: string; city?: string | null }[];
+  locations: { id: string; name: string; nickname?: string | null; city?: string | null }[];
 }
 
 const EMPTY: Results = { certificates: [], suppliers: [], locations: [] };
@@ -34,7 +34,12 @@ export default function SearchBox() {
   const flat: Hit[] = [
     ...results.certificates.map((c) => ({ id: c.id, name: c.name, href: `/certificates/${c.id}`, sub: c.issuing_body ?? undefined })),
     ...results.suppliers.map((s) => ({ id: s.id, name: s.name, href: `/suppliers/${s.id}` })),
-    ...results.locations.map((l) => ({ id: l.id, name: l.name, href: `/locations`, sub: l.city ?? undefined })),
+    ...results.locations.map((l) => ({
+      id: l.id,
+      name: l.nickname?.trim() ? l.nickname : l.name,
+      href: `/locations/${l.id}`,
+      sub: l.city ?? undefined,
+    })),
   ];
 
   const runSearch = useCallback(async (value: string) => {

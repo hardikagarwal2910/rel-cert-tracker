@@ -7,6 +7,7 @@ import Link from 'next/link';
 import BuyerVisibilityEditor from './BuyerVisibilityEditor';
 import RenewalStageControl from './RenewalStageControl';
 import CertArchiveControl from './CertArchiveControl';
+import { locationLabel, locationAddressOneLine } from '@/lib/location-label';
 
 const statusBadge = (status: string) => {
   if (status === 'active') return 'bg-green-100 text-green-800';
@@ -33,9 +34,9 @@ export default async function CertDetailPage({ params }: Props) {
     getCertDocuments(cert.id).catch(() => []),
     getLocations().catch(() => []),
   ]);
-  const locationName = cert.location_id
-    ? locations.find((l) => l.id === cert.location_id)?.name ?? '—'
-    : '—';
+  const certLocation = cert.location_id
+    ? locations.find((l) => l.id === cert.location_id) ?? null
+    : null;
 
   const days = differenceInCalendarDays(new Date(cert.expiry_date), new Date());
   const daysLabel = days < 0 ? `${Math.abs(days)} days overdue` : `${days} days remaining`;
@@ -92,7 +93,16 @@ export default async function CertDetailPage({ params }: Props) {
           <RenewalStageControl certId={cert.id} initial={cert.renewal_stage ?? 'not_started'} />
           <div>
             <p className="text-gray-500 text-xs uppercase mb-1">Location</p>
-            <p className="font-medium text-gray-800">{locationName}</p>
+            {certLocation ? (
+              <>
+                <Link href={`/locations/${certLocation.id}`} className="font-medium text-gray-800 hover:underline">
+                  {locationLabel(certLocation)}
+                </Link>
+                <p className="text-xs text-gray-500 mt-0.5">{locationAddressOneLine(certLocation)}</p>
+              </>
+            ) : (
+              <p className="font-medium text-gray-800">—</p>
+            )}
           </div>
         </div>
       </div>

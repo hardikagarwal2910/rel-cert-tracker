@@ -6,6 +6,7 @@ import { appendAuditLog } from '@/lib/db/audit-log';
 
 const createSchema = z.object({
   name: z.string().min(1),
+  nickname: z.string().optional(),
   address_line_1: z.string().min(1),
   address_line_2: z.string().optional(),
   city: z.string().min(1),

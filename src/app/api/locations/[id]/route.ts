@@ -12,8 +12,12 @@ import { appendAuditLog } from '@/lib/db/audit-log';
 
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
+  nickname: z.string().optional(),
+  address_line_1: z.string().min(1).optional(),
+  address_line_2: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
+  pincode: z.string().optional(),
   country: z.string().optional(),
   active: z.boolean().optional(),
 });

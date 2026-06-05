@@ -1,6 +1,6 @@
 {
   "name": "rel-cert-tracker",
-  "version": "1.1.1",
+  "version": "1.1.3",
   "private": true,
   "scripts": {
     "dev": "next dev",

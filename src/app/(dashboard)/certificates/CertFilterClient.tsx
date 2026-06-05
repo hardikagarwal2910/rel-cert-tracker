@@ -4,8 +4,9 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Certificate } from '@/types/database';
+import { locationLabel } from '@/lib/location-label';
 
-interface LocationOption { id: string; name: string }
+interface LocationOption { id: string; name: string; nickname?: string | null; city?: string | null }
 interface Props {
   certs: Certificate[];
   categories: string[];
@@ -46,7 +47,7 @@ export default function CertFilterClient({ certs, categories, locations, archive
   const [sortAsc, setSortAsc] = useState(true);
   const [restoringId, setRestoringId] = useState<string | null>(null);
 
-  const locName = useMemo(() => new Map(locations.map((l) => [l.id, l.name])), [locations]);
+  const locName = useMemo(() => new Map(locations.map((l) => [l.id, locationLabel(l)])), [locations]);
 
   const restore = async (id: string) => {
     setRestoringId(id);
@@ -102,7 +103,7 @@ export default function CertFilterClient({ certs, categories, locations, archive
         <select value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)} className={selCls}>
           <option value="">All Locations</option>
           <option value="__none__">⚠ No location</option>
-          {locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+          {locations.map((l) => <option key={l.id} value={l.id}>{locationLabel(l)}</option>)}
         </select>
         <span className="text-sm text-gray-500 self-center">{filtered.length} results</span>
       </div>

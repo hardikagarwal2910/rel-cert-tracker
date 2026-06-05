@@ -33,7 +33,7 @@ export default async function EditCertificatePage({ params }: Props) {
         mode="edit"
         certId={cert.id}
         categories={categories.map((c) => c.name)}
-        locations={locations.map((l) => ({ id: l.id, name: l.name }))}
+        locations={locations.map((l) => ({ id: l.id, name: l.name, nickname: l.nickname, city: l.city }))}
         initial={{
           name: cert.name,
           cert_number: cert.cert_number ?? '',

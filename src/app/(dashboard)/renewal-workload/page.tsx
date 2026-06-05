@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { differenceInCalendarDays } from 'date-fns';
 import { getCertificates } from '@/lib/db/certificates';
 import { getLocations } from '@/lib/db/locations';
+import { locationLabel } from '@/lib/location-label';
 import {
   bucketRenewals,
   bucketCost,
@@ -29,7 +30,7 @@ export default async function RenewalWorkloadPage() {
     getLocations().catch(() => []),
   ]);
 
-  const locMap = new Map(locations.map((l) => [l.id, l.name]));
+  const locMap = new Map(locations.map((l) => [l.id, locationLabel(l)]));
   const today = new Date();
 
   const items: RenewalItem[] = certs

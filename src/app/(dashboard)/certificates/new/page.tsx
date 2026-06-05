@@ -16,7 +16,7 @@ export default async function NewCertificatePage() {
       <CertForm
         mode="create"
         categories={categories.map((c) => c.name)}
-        locations={locations.map((l) => ({ id: l.id, name: l.name }))}
+        locations={locations.map((l) => ({ id: l.id, name: l.name, nickname: l.nickname, city: l.city }))}
       />
     </div>
   );

@@ -43,7 +43,7 @@ export default async function CertificatesPage({
       <CertFilterClient
         certs={certs}
         categories={categories.map((c) => c.name)}
-        locations={locations.map((l) => ({ id: l.id, name: l.name }))}
+        locations={locations.map((l) => ({ id: l.id, name: l.name, nickname: l.nickname, city: l.city }))}
         archivedView={archivedView}
       />
     </div>
