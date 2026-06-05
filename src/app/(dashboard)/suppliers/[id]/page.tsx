@@ -43,6 +43,7 @@ export default async function SupplierDetailPage({ params }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Link href={`/suppliers/${supplier.id}/edit`} className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50">Edit</Link>
           <SendInviteButton supplierId={supplier.id} />
           <SupplierArchiveControl supplierId={supplier.id} status={supplier.status} />
         </div>

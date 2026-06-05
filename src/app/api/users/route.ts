@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
-import { getUsers, createUser } from '@/lib/db/users';
+import { getUsers, createUser, getUserByUsername } from '@/lib/db/users';
 import { appendAuditLog } from '@/lib/db/audit-log';
 
 const createSchema = z.object({
   username: z.string().min(1),
+  display_name: z.string().optional(),
   email: z.string().email().optional(),
   password: z.string().min(8),
+  // Role is fixed to 'staff' — admin accounts are NOT creatable from this form.
   role: z.literal('staff'),
-  name: z.string().optional(),
+  active: z.boolean().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -37,6 +39,13 @@ export async function POST(req: NextRequest) {
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: 'Validation failed', details: parsed.error.flatten() }, { status: 400 });
+    }
+
+    // Clear, friendly duplicate-username error (the column is UNIQUE; this
+    // pre-check avoids surfacing a raw DB constraint error as a generic 500).
+    const existing = await getUserByUsername(parsed.data.username);
+    if (existing) {
+      return NextResponse.json({ error: `Username "${parsed.data.username}" is already taken` }, { status: 409 });
     }
 
     const user = await createUser(parsed.data);

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import BuyerVisibilityEditor from './BuyerVisibilityEditor';
 import RenewalStageControl from './RenewalStageControl';
 import CertArchiveControl from './CertArchiveControl';
+import CertRenewControl from './CertRenewControl';
 import { locationLabel, locationAddressOneLine } from '@/lib/location-label';
 
 const statusBadge = (status: string) => {
@@ -65,7 +66,8 @@ export default async function CertDetailPage({ params }: Props) {
         </div>
         <div className="flex gap-2">
           <Link href={`/certificates/${cert.id}/edit`} className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50">Edit</Link>
-          <Link href={`/certificates/${cert.id}/upload-pdf`} className="px-3 py-1.5 text-sm rounded font-medium" style={{ backgroundColor: '#F5C400', color: '#333' }}>Upload Document</Link>
+          <Link href={`/certificates/${cert.id}/upload-pdf`} className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50">Upload Document</Link>
+          <CertRenewControl certId={cert.id} />
           <CertArchiveControl certId={cert.id} archived={!!cert.archived} />
         </div>
       </div>

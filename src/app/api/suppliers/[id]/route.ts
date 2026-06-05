@@ -26,6 +26,12 @@ const updateSchema = z.object({
   buyer_links: z.array(z.string()).optional(),
   required_cert_ids: z.array(z.string()).optional(),
   notes: z.string().optional(),
+  address_line_1: z.string().optional(),
+  address_line_2: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  pincode: z.string().optional(),
+  country: z.string().optional(),
 });
 
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {

@@ -8,8 +8,13 @@ const updateSchema = z.object({
   username: z.string().min(1).optional(),
   email: z.string().email().optional(),
   password: z.string().min(8).optional(),
-  name: z.string().optional(),
+  display_name: z.string().optional(),
   active: z.boolean().optional(),
+});
+
+const resetPasswordSchema = z.object({
+  action: z.literal('reset_password'),
+  password: z.string().min(8),
 });
 
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -38,6 +43,37 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     });
 
     return NextResponse.json(safe);
+  } catch {
+    return NextResponse.json({ error: 'An internal error occurred' }, { status: 500 });
+  }
+}
+
+// PATCH — admin resets another user's password (no email needed). Reuses the
+// same updateUser path as PUT; audit-logged distinctly as user.password_reset.
+export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  try {
+    const auth = await requireAuth(req, ['admin']);
+    if (!isAuthResult(auth)) return auth;
+
+    const { id } = await context.params;
+    const ip = req.headers.get('x-forwarded-for') ?? 'unknown';
+    const body = await req.json();
+    const parsed = resetPasswordSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Validation failed', details: parsed.error.flatten() }, { status: 400 });
+    }
+
+    const user = await updateUser(id, { password: parsed.data.password });
+
+    appendAuditLog({
+      action_type: 'user.password_reset',
+      user_identifier: auth.username,
+      target: id,
+      detail: user.username,
+      ip_address: ip,
+    });
+
+    return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: 'An internal error occurred' }, { status: 500 });
   }

@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.1.4 — 2026-06-05
+
+> Delivers the "Add User UI + missing-UI-control sweep" scope (originally drafted as v1.1.2). Versioned 1.1.4 to stay above the already-shipped v1.1.3 rather than regress the public version.
+
+### Added
+- **Add Staff User UI.** The Users page now has a "New Staff User" button + create form (username, display name, email, password, active). Role is fixed to `staff` — the form cannot create an admin (the API also hard-codes `role: 'staff'`). Duplicate usernames are rejected with a clear message.
+- **Admin password reset.** Each user row has a "Reset password" action that sets a new temporary password (reuses the existing user-update path), audit-logged as `user.password_reset` — lets the owner re-issue credentials without email while the Resend domain is unverified.
+- **Add Supplier (single).** "New Supplier" button + form on the Suppliers page wired to `POST /api/suppliers` (name, tier, commodity tags, address, contacts, notes) — previously only bulk onboarding existed.
+- **Edit Supplier.** Edit form on the supplier detail page wired to `PUT /api/suppliers/[id]` (name, tier, commodity tags, address, contacts) — supplier fields were previously not editable from the UI.
+- **Renew Certificate.** "Renew" control on the certificate detail page wired to `POST /api/certificates/[id]/renew`, which snapshots the prior values into version history (distinct from Edit, which does not version).
+
+### Fixed
+- `POST /api/users` previously sent a `name` field that doesn't exist on the `users` table (column is `display_name`), so staff creation would have failed — corrected to `display_name`, and a pre-check now returns a clear 409 on duplicate usernames.
+- Supplier create/update API schemas now accept the address fields (line 1/2, city, state, pincode, country) so the new supplier forms can persist a full address.
+
 ## v1.1.3 — 2026-06-05
 
 ### Added

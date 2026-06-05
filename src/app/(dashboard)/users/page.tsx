@@ -2,6 +2,8 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getUsers } from '@/lib/db/users';
 import UserActiveToggle from './UserActiveToggle';
+import NewUserButton from './NewUserButton';
+import UserPasswordReset from './UserPasswordReset';
 
 export default async function UsersPage() {
   const headersList = headers();
@@ -12,7 +14,10 @@ export default async function UsersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6" style={{ color: '#878687' }}>Users</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold" style={{ color: '#878687' }}>Users</h1>
+        <NewUserButton />
+      </div>
 
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
@@ -24,12 +29,13 @@ export default async function UsersPage() {
               <th className="px-4 py-2">Role</th>
               <th className="px-4 py-2">Last Login</th>
               <th className="px-4 py-2">Active</th>
+              <th className="px-4 py-2 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {users.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-500">No users found.</td>
+                <td colSpan={7} className="px-4 py-6 text-center text-gray-500">No users found.</td>
               </tr>
             ) : (
               users.map((u) => (
@@ -49,6 +55,9 @@ export default async function UsersPage() {
                   </td>
                   <td className="px-4 py-2">
                     <UserActiveToggle userId={u.id} initialActive={u.active} />
+                  </td>
+                  <td className="px-4 py-2 text-right whitespace-nowrap">
+                    <UserPasswordReset userId={u.id} username={u.username} />
                   </td>
                 </tr>
               ))

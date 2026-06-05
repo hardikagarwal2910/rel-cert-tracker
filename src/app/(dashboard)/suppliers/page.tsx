@@ -17,13 +17,22 @@ export default async function SuppliersPage({
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold" style={{ color: '#878687' }}>Suppliers</h1>
-        <Link
-          href="/bulk-import/suppliers"
-          className="px-4 py-2 rounded text-sm font-medium"
-          style={{ backgroundColor: '#F5C400', color: '#333' }}
-        >
-          Bulk Onboard
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/bulk-import/suppliers"
+            className="px-4 py-2 rounded text-sm font-medium border border-gray-300 hover:bg-gray-50"
+            style={{ color: '#878687' }}
+          >
+            Bulk Onboard
+          </Link>
+          <Link
+            href="/suppliers/new"
+            className="px-4 py-2 rounded text-sm font-medium"
+            style={{ backgroundColor: '#F5C400', color: '#333' }}
+          >
+            + New Supplier
+          </Link>
+        </div>
       </div>
 
       <div className="flex gap-1 mb-4">
