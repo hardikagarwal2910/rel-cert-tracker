@@ -1,16 +1,19 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getUsers } from '@/lib/db/users';
-import { can, canManageUser } from '@/lib/auth/permissions';
+import { can, canManageUser, assignableRoles } from '@/lib/auth/permissions';
 import UserActiveToggle from './UserActiveToggle';
+import UserRoleControl from './UserRoleControl';
 import NewUserButton from './NewUserButton';
 import UserPasswordReset from './UserPasswordReset';
 
 export default async function UsersPage() {
   const headersList = headers();
   const role = headersList.get('x-user-role') ?? undefined;
+  const currentUserId = headersList.get('x-user-id') ?? undefined;
   if (!can(role, 'MANAGE_USERS')) redirect('/');
 
+  const roleOptions = assignableRoles(role);
   const users = await getUsers().catch(() => []);
 
   return (
@@ -45,11 +48,15 @@ export default async function UsersPage() {
                   <td className="px-4 py-2 text-gray-600">{u.display_name ?? '—'}</td>
                   <td className="px-4 py-2 text-gray-600">{u.email ?? '—'}</td>
                   <td className="px-4 py-2">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                      u.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {u.role}
-                    </span>
+                    {canManageUser(role, u.role) && u.id !== currentUserId ? (
+                      <UserRoleControl userId={u.id} username={u.username} role={u.role} options={roleOptions} />
+                    ) : (
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                        u.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {u.role}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-gray-600">
                     {u.last_login ? new Date(u.last_login).toLocaleDateString() : 'Never'}

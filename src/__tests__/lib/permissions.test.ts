@@ -75,6 +75,21 @@ describe('role hierarchy — assignableRoles / canAssignRole', () => {
   });
 });
 
+describe('Users-page "Change role" control — option list (v1.2.1)', () => {
+  // The control's <select> options come straight from assignableRoles(currentRole).
+  it('admin sees all four role options', () => {
+    const opts = assignableRoles('admin');
+    expect(opts).toHaveLength(4);
+    expect(opts).toEqual(expect.arrayContaining(['admin', 'manager', 'staff', 'viewer']));
+  });
+  it('manager sees only staff + viewer (2 options, no admin/manager)', () => {
+    const opts = assignableRoles('manager');
+    expect(opts).toEqual(['staff', 'viewer']);
+    expect(opts).not.toContain('admin');
+    expect(opts).not.toContain('manager');
+  });
+});
+
 describe('canManageUser — who can act on whom', () => {
   it('admin can manage anyone', () => {
     for (const t of ['admin', 'manager', 'staff', 'viewer']) expect(canManageUser('admin', t)).toBe(true);

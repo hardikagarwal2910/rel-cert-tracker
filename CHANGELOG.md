@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.1 — 2026-06-06
+
+### Added
+- **Change an existing user's role from the Users page.** Each user row now has a "Change role" dropdown (next to the active toggle and password reset). It only appears where the current user is allowed to manage that account, never on your own row, and its options are limited to the roles you may assign (admin → all four; manager → staff/viewer only). On change it asks for a brief inline confirm, then calls the existing guarded `PUT /api/users/[id]` — the server remains the security boundary (the UI filtering is convenience only).
+
 ## v1.2.0 — 2026-06-06
 
 ### Added
