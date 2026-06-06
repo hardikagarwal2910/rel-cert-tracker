@@ -59,6 +59,9 @@ export default function CertForm({
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // Optional PDF to attach at creation time (create mode only).
+  const [file, setFile] = useState<File | null>(null);
+  const [docType, setDocType] = useState<'certificate' | 'test_report' | 'scope_annex' | 'other'>('certificate');
 
   const set = (k: keyof CertFormValues, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -66,6 +69,10 @@ export default function CertForm({
     e.preventDefault();
     if (!form.name.trim() || !form.expiry_date) {
       setError('Name and expiry date are required.');
+      return;
+    }
+    if (file && file.type !== 'application/pdf') {
+      setError('The attached document must be a PDF.');
       return;
     }
     setLoading(true);
@@ -96,8 +103,35 @@ export default function CertForm({
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error ?? 'Save failed');
-      if (mode === 'create') router.push('/certificates');
-      else router.push(`/certificates/${certId}`);
+
+      if (mode !== 'create') {
+        router.push(`/certificates/${certId}`);
+        router.refresh();
+        return;
+      }
+
+      // Create mode: cert is now saved. If a PDF was chosen, upload it via the
+      // shared document path. CRUCIAL: if the upload fails, DO NOT lose the
+      // cert — navigate to it with a clear, non-blocking warning.
+      const newId = d.id as string;
+      if (file) {
+        try {
+          const fd = new FormData();
+          fd.append('file', file);
+          fd.append('doc_type', docType);
+          const up = await fetch(`/api/certificates/${newId}/upload-pdf`, { method: 'POST', body: fd });
+          if (!up.ok) {
+            router.push(`/certificates/${newId}?docupload=failed`);
+            router.refresh();
+            return;
+          }
+        } catch {
+          router.push(`/certificates/${newId}?docupload=failed`);
+          router.refresh();
+          return;
+        }
+      }
+      router.push(`/certificates/${newId}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error');
@@ -140,6 +174,30 @@ export default function CertForm({
         {field('Buyer Tags (comma-separated)', <input value={form.buyer_tags} onChange={(e) => set('buyer_tags', e.target.value)} placeholder="reliance, tata" className={inputCls} />)}
       </div>
       {field('Notes', <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={3} className={inputCls} />)}
+
+      {/* Optional PDF attach — create mode only. Additive: the cert detail page
+          still supports uploading documents after creation. */}
+      {mode === 'create' && (
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+          <p className="text-sm font-medium text-gray-700">Attach a PDF document <span className="text-gray-400 font-normal">(optional)</span></p>
+          <div className="grid grid-cols-2 gap-4">
+            {field('Document type', (
+              <select value={docType} onChange={(e) => setDocType(e.target.value as typeof docType)} className={inputCls}>
+                <option value="certificate">Certificate (primary)</option>
+                <option value="test_report">Test report</option>
+                <option value="scope_annex">Scope annex</option>
+                <option value="other">Other</option>
+              </select>
+            ))}
+            {field('PDF file', (
+              <input type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="w-full text-sm" />
+            ))}
+          </div>
+          {file && <p className="text-xs text-gray-500">Selected: {file.name}</p>}
+          <p className="text-[11px] text-gray-400">If the upload fails, the certificate is still created — you can add the document later from the certificate page.</p>
+        </div>
+      )}
+
       <label className="flex items-center gap-2 text-sm text-gray-700">
         <input type="checkbox" checked={form.buyer_visible} onChange={(e) => set('buyer_visible', e.target.checked)} />
         Visible to buyers

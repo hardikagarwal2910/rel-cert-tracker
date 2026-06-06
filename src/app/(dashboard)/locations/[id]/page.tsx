@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import { getLocationById, getCertCountByLocation } from '@/lib/db/locations';
 import { locationAddressLines } from '@/lib/location-label';
 import LocationForm from '../LocationForm';
@@ -9,6 +10,8 @@ interface Props {
 }
 
 export default async function LocationDetailPage({ params }: Props) {
+  // Staff can view full location details; only admins may edit.
+  const isAdmin = headers().get('x-user-role') === 'admin';
   const [location, counts] = await Promise.all([
     getLocationById(params.id).catch(() => null),
     getCertCountByLocation().catch(() => []),
@@ -65,23 +68,25 @@ export default async function LocationDetailPage({ params }: Props) {
           </dl>
         </div>
 
-        {/* Edit form */}
-        <div>
-          <LocationForm
-            mode="edit"
-            locationId={location.id}
-            initial={{
-              nickname: location.nickname ?? '',
-              name: location.name,
-              address_line_1: location.address_line_1,
-              address_line_2: location.address_line_2 ?? '',
-              city: location.city,
-              state: location.state,
-              pincode: location.pincode,
-              country: location.country,
-            }}
-          />
-        </div>
+        {/* Edit form — admin only */}
+        {isAdmin && (
+          <div>
+            <LocationForm
+              mode="edit"
+              locationId={location.id}
+              initial={{
+                nickname: location.nickname ?? '',
+                name: location.name,
+                address_line_1: location.address_line_1,
+                address_line_2: location.address_line_2 ?? '',
+                city: location.city,
+                state: location.state,
+                pincode: location.pincode,
+                country: location.country,
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

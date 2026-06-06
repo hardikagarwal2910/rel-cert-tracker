@@ -1,6 +1,7 @@
 import { getSupplierById, getSupplierScorecard } from '@/lib/db/suppliers';
 import { getCertificates } from '@/lib/db/certificates';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import SendInviteButton from './SendInviteButton';
 import SupplierArchiveControl from './SupplierArchiveControl';
@@ -17,6 +18,9 @@ export default async function SupplierDetailPage({ params }: Props) {
   ]);
 
   if (!supplier) notFound();
+
+  // Staff can view a supplier but only admins may edit / invite / archive.
+  const isAdmin = headers().get('x-user-role') === 'admin';
 
   const requiredCerts = allCerts.filter((c) =>
     supplier.required_cert_ids?.includes(c.id)
@@ -42,11 +46,13 @@ export default async function SupplierDetailPage({ params }: Props) {
             {supplier.city ? ` · ${supplier.city}, ${supplier.state}` : ''}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link href={`/suppliers/${supplier.id}/edit`} className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50">Edit</Link>
-          <SendInviteButton supplierId={supplier.id} />
-          <SupplierArchiveControl supplierId={supplier.id} status={supplier.status} />
-        </div>
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            <Link href={`/suppliers/${supplier.id}/edit`} className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50">Edit</Link>
+            <SendInviteButton supplierId={supplier.id} />
+            <SupplierArchiveControl supplierId={supplier.id} status={supplier.status} />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

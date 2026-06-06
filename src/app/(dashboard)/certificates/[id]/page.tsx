@@ -25,11 +25,14 @@ const DOC_TYPE_LABEL: Record<string, string> = {
 
 interface Props {
   params: { id: string };
+  searchParams?: { docupload?: string };
 }
 
-export default async function CertDetailPage({ params }: Props) {
+export default async function CertDetailPage({ params, searchParams }: Props) {
   const cert = await getCertificateById(params.id).catch(() => null);
   if (!cert) notFound();
+
+  const docUploadFailed = searchParams?.docupload === 'failed';
 
   const [documents, locations] = await Promise.all([
     getCertDocuments(cert.id).catch(() => []),
@@ -71,6 +74,13 @@ export default async function CertDetailPage({ params }: Props) {
           <CertArchiveControl certId={cert.id} archived={!!cert.archived} />
         </div>
       </div>
+
+      {docUploadFailed && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 mb-6 text-sm text-amber-800">
+          Certificate created, but the document upload failed. The certificate is saved — use
+          <span className="font-medium"> Upload Document</span> below to attach the PDF.
+        </div>
+      )}
 
       {cert.archived && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 mb-6 text-sm text-amber-800">

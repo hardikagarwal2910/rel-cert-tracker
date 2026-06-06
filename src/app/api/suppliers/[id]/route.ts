@@ -52,7 +52,8 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
 
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    // Editing a supplier is admin-only. Staff may ADD suppliers (POST) but not edit.
+    const auth = await requireAuth(req, ['admin']);
     if (!isAuthResult(auth)) return auth;
 
     const { id } = await context.params;

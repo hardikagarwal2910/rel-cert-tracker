@@ -32,7 +32,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin']);
+    // Staff may ADD locations; editing/deactivating stays admin-only (see [id] route).
+    const auth = await requireAuth(req, ['admin', 'staff']);
     if (!isAuthResult(auth)) return auth;
 
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown';

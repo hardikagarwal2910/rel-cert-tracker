@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { getSuppliers } from '@/lib/db/suppliers';
 import SuppliersClient from './SuppliersClient';
 
@@ -7,6 +8,7 @@ export default async function SuppliersPage({
 }: {
   searchParams?: { inactive?: string };
 }) {
+  const isAdmin = headers().get('x-user-role') === 'admin';
   const showInactive = searchParams?.inactive === 'true';
   const suppliers = await getSuppliers(showInactive ? { includeInactive: true } : undefined).catch(() => []);
 
@@ -40,7 +42,7 @@ export default async function SuppliersPage({
         <Link href="/suppliers?inactive=true" className={tabCls(showInactive)}>All (incl. inactive)</Link>
       </div>
 
-      <SuppliersClient suppliers={suppliers} />
+      <SuppliersClient suppliers={suppliers} isAdmin={isAdmin} />
     </div>
   );
 }

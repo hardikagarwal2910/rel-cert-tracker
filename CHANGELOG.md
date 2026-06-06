@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.1.6 — 2026-06-05
+
+### Fixed
+- **Diagnosed the "An internal error occurred" failure on PDF document upload** (failed for everyone, admin included). Root cause is **not** code or permissions: the Google Cloud **service account credentials are invalid** — the OAuth token exchange returns `invalid_grant: account not found`, i.e. the service account behind `GOOGLE_SERVICE_ACCOUNT_EMAIL`/`GOOGLE_PRIVATE_KEY` has been deleted/revoked. **Owner action required** (regenerate the service account + key in Google Cloud, re-share the Drive folder as Editor, update the env vars in Vercel and `.env.local`).
+- The upload route previously swallowed the real error in a bare `catch {}` (no server log), so failures were undiagnosable. It now logs the real (sanitised) error server-side while still returning a safe message to the client.
+
+### Added
+- **Staff add-permissions.** Staff users may now **add** locations and suppliers (previously `POST /api/locations` was admin-only, which is why staff "couldn't add an address"). Editing, deactivating, and archiving locations/suppliers remain **admin-only** — enforced at the API (staff get 403) and reflected in the UI (staff don't see Edit/Deactivate/Archive controls).
+- **Attach a PDF while creating a certificate.** The new-certificate form now has an optional PDF picker + document-type selector. On submit the cert is created and the document uploaded in one step. If the upload fails (e.g. while the Drive credentials are being fixed), the certificate is **still saved** and the user is told to upload the document from the certificate page — the cert is never lost. The existing post-creation upload page continues to work.
+
 ## v1.1.4 — 2026-06-05
 
 > Delivers the "Add User UI + missing-UI-control sweep" scope (originally drafted as v1.1.2). Versioned 1.1.4 to stay above the already-shipped v1.1.3 rather than regress the public version.

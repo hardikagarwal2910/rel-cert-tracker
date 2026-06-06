@@ -4,6 +4,7 @@ import { getCertificateById, updateCertificate } from '@/lib/db/certificates';
 import { createCertDocument } from '@/lib/db/cert-documents';
 import { appendAuditLog } from '@/lib/db/audit-log';
 import { uploadFile, getOrCreateFolder, renameFile } from '@/lib/google-drive';
+import { sanitiseError } from '@/lib/security/sanitise-error';
 
 const MAX_SIZE = 20 * 1024 * 1024; // 20 MB
 const DOC_TYPES = ['certificate', 'test_report', 'scope_annex', 'other'] as const;
@@ -80,7 +81,10 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
     });
 
     return NextResponse.json({ success: true, file_id: fileId, doc_type: docType });
-  } catch {
+  } catch (err) {
+    // Log the REAL (sanitised) error server-side so upload failures are
+    // diagnosable — the client still gets a safe, generic message.
+    console.error('[upload-pdf] failed:', sanitiseError(err));
     return NextResponse.json({ error: 'An internal error occurred' }, { status: 500 });
   }
 }
