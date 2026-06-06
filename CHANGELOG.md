@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.8 — 2026-06-06
+
+### Fixed
+- **PDF upload — final fix.** After the Shared-Drive flags (v1.1.7), uploads failed with `Cannot read properties of undefined (reading 'from')`: `uploadFile` used `const { Readable } = await import('stream')`, but Vercel's serverless bundling left the named `Readable` export undefined at runtime. Replaced with a static `import { Readable } from 'node:stream'`. The complete upload mechanism (folder get-or-create + streamed file create, all Shared-Drive aware) is now verified end-to-end against the live Drive folder.
+
 ## v1.1.7 — 2026-06-06
 
 ### Fixed

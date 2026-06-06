@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { google } from 'googleapis';
+import { Readable } from 'node:stream';
 import { sanitiseError } from '@/lib/security/sanitise-error';
 
 // NEVER log the private key — not even partially
@@ -25,7 +26,9 @@ export async function uploadFile(params: {
 }): Promise<{ fileId: string; webViewLink: string }> {
   try {
     const drive = getDriveClient();
-    const { Readable } = await import('stream');
+    // Static import (not `await import('stream')`) — the dynamic import did not
+    // expose the named `Readable` export under Vercel's serverless bundling,
+    // leaving it undefined at runtime.
     const stream = Readable.from(params.fileBuffer);
 
     const res = await drive.files.create({
