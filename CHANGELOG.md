@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.2.0 — 2026-06-06
+
+### Added
+- **Four-tier role system — Manager and Viewer roles** (was just admin/staff):
+  - **Admin** — full control (unchanged): audit log, settings, backup, hard-delete, and may create users of any role.
+  - **Manager** — "runs the show": manage all data (add/edit/archive certs, suppliers, locations), renew, review supplier certs, bulk import, manage buyers (approve/reject/suspend/visibility), and create **staff/viewer** users — but **no** audit log, settings, backup, hard-delete, and **cannot create admins or managers**.
+  - **Staff** — add-only: create certs/suppliers/locations, upload documents, bulk import (no edit/archive, no user/buyer management).
+  - **Viewer** — read-only everywhere; no create/edit/delete controls at all.
+- **Central permission model** (`src/lib/auth/permissions.ts`) — a single source of truth (`can(role, capability)`) used by both the API (`requireCap`) and the UI, so the rules live in exactly one place. Every restriction is **enforced server-side** (403 at the route), with the UI reflecting the same gates.
+- **Role-hierarchy guard** on user creation/role-change: a manager can never create or promote anyone to admin/manager, and no user can change their own role — enforced server-side regardless of the submitted form.
+
+### Notes
+- Migration `008_roles.sql` must be run in the Supabase SQL editor (it widens the `users.role` CHECK to `admin/manager/staff/viewer`). It does not auto-run.
+- Pranav was migrated from staff to **manager**.
+
 ## v1.1.8 — 2026-06-06
 
 ### Fixed
