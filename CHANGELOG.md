@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.7 — 2026-06-06
+
+### Fixed
+- **PDF document upload now works** (completes the v1.1.6 fix). After the Google service-account credentials were rotated, uploads still failed in production with `File not found: <folder id>`. Root cause: the target Drive folder lives in a **Shared Drive**, but the app's Google Drive calls didn't pass the shared-drive flags, so Drive v3 reported the folder as not found. All `files.*` calls in `src/lib/google-drive/index.ts` now pass `supportsAllDrives: true` (and `includeItemsFromAllDrives: true` for list). Verified end-to-end against the live Shared Drive folder.
+
 ## v1.1.6 — 2026-06-05
 
 ### Fixed

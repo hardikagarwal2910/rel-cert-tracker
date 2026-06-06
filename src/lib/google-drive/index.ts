@@ -35,6 +35,7 @@ export async function uploadFile(params: {
       },
       media: { mimeType: params.mimeType, body: stream },
       fields: 'id,webViewLink',
+      supportsAllDrives: true, // folder lives in a Shared Drive
     });
 
     return {
@@ -51,7 +52,7 @@ export async function uploadFile(params: {
 export async function renameFile(fileId: string, newName: string): Promise<void> {
   try {
     const drive = getDriveClient();
-    await drive.files.update({ fileId, requestBody: { name: newName } });
+    await drive.files.update({ fileId, requestBody: { name: newName }, supportsAllDrives: true });
   } catch (err) {
     const safe = sanitiseError(err);
     console.error('[google-drive] renameFile failed:', safe);
@@ -67,6 +68,7 @@ export async function createFolder(name: string, parentId: string): Promise<stri
       parents: [parentId],
     },
     fields: 'id',
+    supportsAllDrives: true, // folder lives in a Shared Drive
   });
   return res.data.id ?? '';
 }
@@ -75,7 +77,12 @@ export async function getOrCreateFolder(name: string, parentId: string): Promise
   try {
     const drive = getDriveClient();
     const query = `name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-    const res = await drive.files.list({ q: query, fields: 'files(id)' });
+    const res = await drive.files.list({
+      q: query,
+      fields: 'files(id)',
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true, // search inside Shared Drives
+    });
     const files = res.data.files ?? [];
     if (files.length > 0 && files[0].id) return files[0].id;
     return createFolder(name, parentId);
@@ -93,6 +100,7 @@ export async function generateDownloadLink(fileId: string): Promise<string> {
       fileId,
       requestBody: {},
       addParents: undefined,
+      supportsAllDrives: true,
     });
     // Return a direct download link — Drive handles auth via service account
     return `https://drive.google.com/uc?id=${fileId}&export=download`;
