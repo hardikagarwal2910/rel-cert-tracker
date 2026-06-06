@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { renewCertificate } from '@/lib/db/certificates';
 import { appendAuditLog } from '@/lib/db/audit-log';
 
@@ -13,7 +13,7 @@ const renewSchema = z.object({
 
 export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    const auth = await requireCap(req, 'RENEW_CERT');
     if (!isAuthResult(auth)) return auth;
 
     const { id } = await context.params;

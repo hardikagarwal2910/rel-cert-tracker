@@ -15,6 +15,8 @@ jest.mock('@/lib/db/notification-log', () => ({ logNotification: jest.fn() }));
 jest.mock('@/lib/db/audit-log', () => ({ appendAuditLog: jest.fn() }));
 jest.mock('@/lib/mailer', () => ({ sendWeeklyDigest: jest.fn().mockResolvedValue({ success: true }) }));
 jest.mock('@/lib/auth/middleware', () => ({
+  requireCap: jest.fn(async (req, cap) => { const role = req.headers.get("x-user-role"); const id = req.headers.get("x-user-id"); const username = req.headers.get("x-user-name") ?? "testuser"; const { NextResponse } = require("next/server"); if (!id || !role) return NextResponse.json({ error: "Authentication required" }, { status: 401 }); const { can } = jest.requireActual("@/lib/auth/permissions"); if (!can(role, cap)) return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 }); return { id, role, username, email: username + "@test.com" }; }),
+  
   requireAuth: jest.fn(async (req: { headers: { get: (k: string) => string | null } }) => {
     const id = req.headers.get('x-user-id');
     if (!id) { const { NextResponse } = require('next/server'); return NextResponse.json({ error: 'Authentication required' }, { status: 401 }); }

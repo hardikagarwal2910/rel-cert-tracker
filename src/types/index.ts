@@ -120,7 +120,7 @@ export interface UserInput {
   password?: string;
   display_name?: string;
   email?: string;
-  role?: 'admin' | 'staff';
+  role?: 'admin' | 'manager' | 'staff' | 'viewer';
   active?: boolean;
 }
 

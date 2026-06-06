@@ -7,7 +7,7 @@ import type { Supplier } from '@/types/database';
 
 interface Props {
   suppliers: Supplier[];
-  isAdmin?: boolean;
+  canArchive?: boolean;
 }
 
 const statusBadge = (status: string) => {
@@ -20,14 +20,14 @@ const statusBadge = (status: string) => {
   return map[status] ?? 'bg-gray-100 text-gray-600';
 };
 
-export default function SuppliersClient({ suppliers, isAdmin = false }: Props) {
+export default function SuppliersClient({ suppliers, canArchive = false }: Props) {
   const router = useRouter();
   const [tierFilter, setTierFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [reactivatingId, setReactivatingId] = useState<string | null>(null);
 
   // Reactivate is an admin-only mutation; only show the Action column to admins.
-  const hasInactive = useMemo(() => isAdmin && suppliers.some((s) => s.status === 'inactive'), [suppliers, isAdmin]);
+  const hasInactive = useMemo(() => canArchive && suppliers.some((s) => s.status === 'inactive'), [suppliers, canArchive]);
 
   const reactivate = async (id: string) => {
     setReactivatingId(id);

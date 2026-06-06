@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { getCategories, createCategory, deactivateCategory } from '@/lib/db/categories';
 import { appendAuditLog } from '@/lib/db/audit-log';
 
@@ -14,7 +14,7 @@ const deactivateSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin', 'staff', 'guest']);
+    const auth = await requireCap(req, 'VIEW_DATA');
     if (!isAuthResult(auth)) return auth;
 
     const categories = await getCategories();
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'SETTINGS');
     if (!isAuthResult(auth)) return auth;
 
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown';
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'SETTINGS');
     if (!isAuthResult(auth)) return auth;
 
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown';

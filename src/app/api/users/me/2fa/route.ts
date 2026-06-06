@@ -6,7 +6,7 @@ import { appendAuditLog } from '@/lib/db/audit-log';
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    const auth = await requireAuth(req, ['admin', 'manager', 'staff', 'viewer']);
     if (!isAuthResult(auth)) return auth;
 
     const user = await getUserById(auth.id);
@@ -20,7 +20,7 @@ const schema = z.object({ enabled: z.boolean() });
 
 export async function PATCH(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    const auth = await requireAuth(req, ['admin', 'manager', 'staff', 'viewer']);
     if (!isAuthResult(auth)) return auth;
 
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown';

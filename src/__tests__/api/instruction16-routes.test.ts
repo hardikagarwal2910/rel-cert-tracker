@@ -6,6 +6,8 @@
 import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/auth/middleware', () => ({
+  requireCap: jest.fn(async (req, cap) => { const role = req.headers.get("x-user-role"); const id = req.headers.get("x-user-id"); const username = req.headers.get("x-user-name") ?? "testuser"; const { NextResponse } = require("next/server"); if (!id || !role) return NextResponse.json({ error: "Authentication required" }, { status: 401 }); const { can } = jest.requireActual("@/lib/auth/permissions"); if (!can(role, cap)) return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 }); return { id, role, username, email: username + "@test.com" }; }),
+  
   requireAuth: jest.fn(async (req: { headers: { get: (k: string) => string | null } }, roles: string[] = ['admin', 'staff']) => {
     const id = req.headers.get('x-user-id');
     const role = req.headers.get('x-user-role');
@@ -28,6 +30,7 @@ jest.mock('@/lib/auth/middleware', () => ({
 jest.mock('@/lib/db/users', () => ({
   getUsers: jest.fn().mockResolvedValue([]),
   getUserByUsername: jest.fn().mockResolvedValue(null), // no duplicate by default
+  getUserById: jest.fn().mockResolvedValue({ id: 'u-1', username: 'someone', role: 'staff' }),
   createUser: jest.fn().mockResolvedValue({ id: 'u-new', username: 'newstaff', role: 'staff', display_name: 'New Staff', password_hash: 'HASH', active: true }),
   updateUser: jest.fn().mockResolvedValue({ id: 'u-1', username: 'someone', password_hash: 'NEWHASH' }),
   deactivateUser: jest.fn().mockResolvedValue(undefined),
@@ -95,9 +98,15 @@ describe('POST /api/users — Add Staff User', () => {
     expect(body.error).toMatch(/taken/i);
   });
 
-  it('role "admin" from the form path → 400 (cannot create an admin)', async () => {
+  it('admin MAY create an admin (v1.2.0 hierarchy) → 201', async () => {
     const { POST } = require('@/app/api/users/route');
     const res = await POST(req('http://localhost/api/users', { ...validUser, role: 'admin' }, admin));
+    expect(res.status).toBe(201);
+  });
+
+  it('invalid role value → 400 (rejected by schema enum)', async () => {
+    const { POST } = require('@/app/api/users/route');
+    const res = await POST(req('http://localhost/api/users', { ...validUser, role: 'superuser' }, admin));
     expect(res.status).toBe(400);
   });
 

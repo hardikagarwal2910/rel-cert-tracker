@@ -1,11 +1,11 @@
 import { NextRequest } from 'next/server';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { exportAuditLogCsv } from '@/lib/db/audit-log';
 import { adminLimiter } from '@/lib/rate-limit';
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'VIEW_AUDIT_LOG');
     if (!isAuthResult(auth)) return auth;
 
     const limited = adminLimiter(req);

@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { getSessionToken } from '@/lib/auth/session-token';
+import { can, type Capability } from '@/lib/auth/permissions';
+
+// All authenticated dashboard roles (incl. legacy 'guest'). requireCap admits
+// any authenticated session here, then enforces the capability via the matrix.
+const ALL_DASHBOARD_ROLES = ['admin', 'manager', 'staff', 'viewer', 'guest'];
+
+type AuthUser = { id: string; role: string; username: string; email: string };
 
 const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET ?? '');
 
@@ -115,4 +122,24 @@ export function isAuthResult<T>(
   result: T | NextResponse
 ): result is T {
   return !(result instanceof NextResponse);
+}
+
+/**
+ * requireCap — capability-based gate (the four-tier role model). Admits any
+ * authenticated dashboard session, then enforces the capability via the central
+ * permission matrix (src/lib/auth/permissions.ts). Returns the user payload or a
+ * 401 (no session) / 403 (insufficient permission) response.
+ *
+ * Use this EVERYWHERE instead of hand-written role-string lists.
+ */
+export async function requireCap(
+  req: NextRequest,
+  capability: Capability
+): Promise<AuthUser | NextResponse> {
+  const auth = await requireAuth(req, ALL_DASHBOARD_ROLES);
+  if (!isAuthResult(auth)) return auth; // 401 — not authenticated
+  if (!can(auth.role, capability)) {
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+  }
+  return auth;
 }

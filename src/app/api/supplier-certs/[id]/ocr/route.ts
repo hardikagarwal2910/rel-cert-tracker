@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { getSupplierCertById, saveOcrResult } from '@/lib/db/supplier-certs';
 import { appendAuditLog } from '@/lib/db/audit-log';
 import { extractCertFields, compareCertFields } from '@/lib/ocr';
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
   if (limited) return limited;
 
   try {
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    const auth = await requireCap(req, 'REVIEW_SUPPLIER_CERTS');
     if (!isAuthResult(auth)) return auth;
 
     if (!process.env.ANTHROPIC_API_KEY) {

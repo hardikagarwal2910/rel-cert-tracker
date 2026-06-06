@@ -1,7 +1,9 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { getCertificates } from '@/lib/db/certificates';
 import { getCategories } from '@/lib/db/categories';
 import { getLocations } from '@/lib/db/locations';
+import { can } from '@/lib/auth/permissions';
 import CertFilterClient from './CertFilterClient';
 
 export default async function CertificatesPage({
@@ -9,6 +11,8 @@ export default async function CertificatesPage({
 }: {
   searchParams?: { archived?: string };
 }) {
+  const role = headers().get('x-user-role') ?? undefined;
+  const canAdd = can(role, 'ADD_ENTITY');
   const archivedView = searchParams?.archived === 'true';
 
   const [certs, categories, locations] = await Promise.all([
@@ -26,13 +30,15 @@ export default async function CertificatesPage({
         <h1 className="text-2xl font-bold" style={{ color: '#878687' }}>
           Certificates
         </h1>
-        <Link
-          href="/certificates/new"
-          className="px-4 py-2 rounded text-sm font-medium"
-          style={{ backgroundColor: '#F5C400', color: '#333' }}
-        >
-          + New Certificate
-        </Link>
+        {canAdd && (
+          <Link
+            href="/certificates/new"
+            className="px-4 py-2 rounded text-sm font-medium"
+            style={{ backgroundColor: '#F5C400', color: '#333' }}
+          >
+            + New Certificate
+          </Link>
+        )}
       </div>
 
       <div className="flex gap-1 mb-4">

@@ -10,17 +10,17 @@ const navLinks: NavLink[] = [
   { href: '/', label: 'Dashboard' },
   { href: '/certificates', label: 'Certificates' },
   { href: '/calendar', label: 'Calendar' },
-  { href: '/bulk-import', label: 'Bulk Import' },
+  { href: '/bulk-import', label: 'Bulk Import', cap: 'BULK_IMPORT' },
   { href: '/locations', label: 'Locations' },
   { href: '/suppliers', label: 'Suppliers' },
   { href: '/review-queue', label: 'Review Queue', badge: true },
   { href: '/pdf-requests', label: 'PDF Requests' },
-  { href: '/buyer-activity', label: 'Buyer Activity', adminOnly: true },
+  { href: '/buyer-activity', label: 'Buyer Activity', cap: 'MANAGE_BUYERS' },
   { href: '/renewal-workload', label: 'Renewal Workload' },
   { href: '/audit-pack', label: 'Audit Pack' },
-  { href: '/users', label: 'Users' },
-  { href: '/audit-log', label: 'Audit Log' },
-  { href: '/settings', label: 'Settings' },
+  { href: '/users', label: 'Users', cap: 'MANAGE_USERS' },
+  { href: '/audit-log', label: 'Audit Log', cap: 'VIEW_AUDIT_LOG' },
+  { href: '/settings', label: 'Settings', cap: 'SETTINGS' },
 ];
 
 export default async function DashboardLayout({

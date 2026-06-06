@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { getLocations, createLocation } from '@/lib/db/locations';
 import { appendAuditLog } from '@/lib/db/audit-log';
 
@@ -18,7 +18,7 @@ const createSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin', 'staff', 'guest']);
+    const auth = await requireCap(req, 'VIEW_DATA');
     if (!isAuthResult(auth)) return auth;
 
     const { searchParams } = new URL(req.url);
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     // Staff may ADD locations; editing/deactivating stays admin-only (see [id] route).
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    const auth = await requireCap(req, 'ADD_ENTITY');
     if (!isAuthResult(auth)) return auth;
 
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown';

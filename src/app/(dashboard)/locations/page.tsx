@@ -2,12 +2,16 @@ import Link from 'next/link';
 import { headers } from 'next/headers';
 import { getLocations, getCertCountByLocation } from '@/lib/db/locations';
 import { locationAddressOneLine } from '@/lib/location-label';
+import { can } from '@/lib/auth/permissions';
 import LocationForm from './LocationForm';
 import LocationActiveControl from './LocationActiveControl';
 
 export default async function LocationsPage() {
-  // Staff may ADD locations; deactivate/reactivate is admin-only.
-  const isAdmin = headers().get('x-user-role') === 'admin';
+  // Staff may ADD locations; edit/deactivate is admin/manager only.
+  const role = headers().get('x-user-role') ?? undefined;
+  const canAdd = can(role, 'ADD_ENTITY');
+  const canEdit = can(role, 'EDIT_ENTITY');
+  const canArchive = can(role, 'ARCHIVE_ENTITY');
   const [locations, counts] = await Promise.all([
     getLocations().catch(() => []),
     getCertCountByLocation().catch(() => []),
@@ -58,8 +62,8 @@ export default async function LocationsPage() {
                           </span>
                         </td>
                         <td className="px-4 py-2 text-right whitespace-nowrap">
-                          <Link href={`/locations/${loc.id}`} className="text-xs px-2 py-0.5 rounded border border-gray-200 hover:bg-gray-50 text-gray-600 mr-2">{isAdmin ? 'View / Edit' : 'View'}</Link>
-                          {isAdmin && <LocationActiveControl locationId={loc.id} active={loc.active} certCount={countMap.get(loc.id) ?? 0} />}
+                          <Link href={`/locations/${loc.id}`} className="text-xs px-2 py-0.5 rounded border border-gray-200 hover:bg-gray-50 text-gray-600 mr-2">{canEdit ? 'View / Edit' : 'View'}</Link>
+                          {canArchive && <LocationActiveControl locationId={loc.id} active={loc.active} certCount={countMap.get(loc.id) ?? 0} />}
                         </td>
                       </tr>
                     );
@@ -70,9 +74,11 @@ export default async function LocationsPage() {
           </div>
         </div>
 
-        <div>
-          <LocationForm mode="create" />
-        </div>
+        {canAdd && (
+          <div>
+            <LocationForm mode="create" />
+          </div>
+        )}
       </div>
     </div>
   );

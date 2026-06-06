@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { getBuyerVisits } from '@/lib/db/buyers';
 
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'MANAGE_BUYERS');
     if (!isAuthResult(auth)) return auth;
 
     const { id } = await context.params;

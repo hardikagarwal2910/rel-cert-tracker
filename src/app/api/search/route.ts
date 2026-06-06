@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { globalSearch } from '@/lib/db/search';
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    const auth = await requireCap(req, 'VIEW_DATA');
     if (!isAuthResult(auth)) return auth;
 
     const { searchParams } = new URL(req.url);

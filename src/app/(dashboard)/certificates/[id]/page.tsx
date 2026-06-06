@@ -2,8 +2,10 @@ import { getCertificateById } from '@/lib/db/certificates';
 import { getCertDocuments } from '@/lib/db/cert-documents';
 import { getLocations } from '@/lib/db/locations';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import { differenceInCalendarDays } from 'date-fns';
 import Link from 'next/link';
+import { can } from '@/lib/auth/permissions';
 import BuyerVisibilityEditor from './BuyerVisibilityEditor';
 import RenewalStageControl from './RenewalStageControl';
 import CertArchiveControl from './CertArchiveControl';
@@ -31,6 +33,12 @@ interface Props {
 export default async function CertDetailPage({ params, searchParams }: Props) {
   const cert = await getCertificateById(params.id).catch(() => null);
   if (!cert) notFound();
+
+  const role = headers().get('x-user-role') ?? undefined;
+  const canEdit = can(role, 'EDIT_ENTITY');
+  const canAddDocs = can(role, 'ADD_DOCS');
+  const canRenew = can(role, 'RENEW_CERT');
+  const canArchive = can(role, 'ARCHIVE_ENTITY');
 
   const docUploadFailed = searchParams?.docupload === 'failed';
 
@@ -68,10 +76,10 @@ export default async function CertDetailPage({ params, searchParams }: Props) {
           <h1 className="text-2xl font-bold mt-1" style={{ color: '#878687' }}>{cert.name}</h1>
         </div>
         <div className="flex gap-2">
-          <Link href={`/certificates/${cert.id}/edit`} className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50">Edit</Link>
-          <Link href={`/certificates/${cert.id}/upload-pdf`} className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50">Upload Document</Link>
-          <CertRenewControl certId={cert.id} />
-          <CertArchiveControl certId={cert.id} archived={!!cert.archived} />
+          {canEdit && <Link href={`/certificates/${cert.id}/edit`} className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50">Edit</Link>}
+          {canAddDocs && <Link href={`/certificates/${cert.id}/upload-pdf`} className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50">Upload Document</Link>}
+          {canRenew && <CertRenewControl certId={cert.id} />}
+          {canArchive && <CertArchiveControl certId={cert.id} archived={!!cert.archived} />}
         </div>
       </div>
 
@@ -102,7 +110,14 @@ export default async function CertDetailPage({ params, searchParams }: Props) {
             <p className="font-medium text-gray-800">{cert.expiry_date}</p>
             <p className="text-xs font-medium" style={{ color: daysColor }}>{daysLabel}</p>
           </div>
-          <RenewalStageControl certId={cert.id} initial={cert.renewal_stage ?? 'not_started'} />
+          {canEdit ? (
+            <RenewalStageControl certId={cert.id} initial={cert.renewal_stage ?? 'not_started'} />
+          ) : (
+            <div>
+              <p className="text-gray-500 text-xs uppercase mb-1">Renewal Stage</p>
+              <p className="font-medium text-gray-800">{(cert.renewal_stage ?? 'not_started').replace(/_/g, ' ')}</p>
+            </div>
+          )}
           <div>
             <p className="text-gray-500 text-xs uppercase mb-1">Location</p>
             {certLocation ? (
@@ -123,7 +138,7 @@ export default async function CertDetailPage({ params, searchParams }: Props) {
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-700">Documents</h2>
-          <Link href={`/certificates/${cert.id}/upload-pdf`} className="text-xs hover:underline" style={{ color: '#878687' }}>+ Add document</Link>
+          {canAddDocs && <Link href={`/certificates/${cert.id}/upload-pdf`} className="text-xs hover:underline" style={{ color: '#878687' }}>+ Add document</Link>}
         </div>
         {docGroups.size === 0 ? (
           <p className="text-sm text-gray-500">No documents uploaded yet.</p>
@@ -170,7 +185,7 @@ export default async function CertDetailPage({ params, searchParams }: Props) {
         </div>
       </div>
 
-      <BuyerVisibilityEditor certId={cert.id} initialVisible={!!cert.buyer_visible} initialTags={cert.buyer_tags ?? []} />
+      {canEdit && <BuyerVisibilityEditor certId={cert.id} initialVisible={!!cert.buyer_visible} initialTags={cert.buyer_tags ?? []} />}
 
       {/* Version history */}
       {cert.version_history?.length > 0 && (

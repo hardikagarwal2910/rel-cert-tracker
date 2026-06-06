@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import {
   updateLocation,
   deactivateLocation,
@@ -26,7 +26,7 @@ const actionSchema = z.object({ action: z.enum(['deactivate', 'reactivate']) });
 
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'EDIT_ENTITY');
     if (!isAuthResult(auth)) return auth;
 
     const { id } = await context.params;
@@ -58,7 +58,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 // location drops out of the cert-form dropdown for new assignments.
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'ARCHIVE_ENTITY');
     if (!isAuthResult(auth)) return auth;
 
     const { id } = await context.params;
@@ -108,7 +108,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 
 export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'ARCHIVE_ENTITY');
     if (!isAuthResult(auth)) return auth;
 
     const { id } = await context.params;

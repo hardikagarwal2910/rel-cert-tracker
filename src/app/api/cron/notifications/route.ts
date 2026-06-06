@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { getExpiringSoon } from '@/lib/db/certificates';
 import { getExpiringSupplierCerts, getSupplierCerts } from '@/lib/db/supplier-certs';
 import { getSupplierById } from '@/lib/db/suppliers';
@@ -177,7 +177,7 @@ export async function GET(req: NextRequest) {
 // Manual trigger by admin
 export async function POST(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'SETTINGS');
     if (!isAuthResult(auth)) return auth;
 
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown';

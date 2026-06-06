@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { getSupplierById, updateSupplier } from '@/lib/db/suppliers';
 import { encrypt } from '@/lib/encryption';
 import { appendAuditLog } from '@/lib/db/audit-log';
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
   if (limited) return limited;
 
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'EDIT_ENTITY');
     if (!isAuthResult(auth)) return auth;
 
     const { id } = await context.params;

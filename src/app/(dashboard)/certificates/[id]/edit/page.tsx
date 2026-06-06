@@ -1,8 +1,10 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { getCertificateById } from '@/lib/db/certificates';
 import { getCategories } from '@/lib/db/categories';
 import { getLocations, getLocationById } from '@/lib/db/locations';
+import { can } from '@/lib/auth/permissions';
 import CertForm from '../../CertForm';
 
 interface Props {
@@ -10,6 +12,7 @@ interface Props {
 }
 
 export default async function EditCertificatePage({ params }: Props) {
+  if (!can(headers().get('x-user-role'), 'EDIT_ENTITY')) redirect(`/certificates/${params.id}`);
   const [cert, categories, activeLocations] = await Promise.all([
     getCertificateById(params.id).catch(() => null),
     getCategories(true).catch(() => []),

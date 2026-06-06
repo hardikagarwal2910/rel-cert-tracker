@@ -10,6 +10,8 @@ import { NextRequest } from 'next/server';
 
 // ── Auth middleware (role from x-user-role header) ────────────────────────────
 jest.mock('@/lib/auth/middleware', () => ({
+  requireCap: jest.fn(async (req, cap) => { const role = req.headers.get("x-user-role"); const id = req.headers.get("x-user-id"); const username = req.headers.get("x-user-name") ?? "testuser"; const { NextResponse } = require("next/server"); if (!id || !role) return NextResponse.json({ error: "Authentication required" }, { status: 401 }); const { can } = jest.requireActual("@/lib/auth/permissions"); if (!can(role, cap)) return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 }); return { id, role, username, email: username + "@test.com" }; }),
+  
   requireAuth: jest.fn(async (req: { headers: { get: (k: string) => string | null } }, roles: string[] = ['admin', 'staff']) => {
     const id = req.headers.get('x-user-id');
     const role = req.headers.get('x-user-role');
@@ -96,16 +98,22 @@ describe('PATCH /api/certificates/[id]', () => {
     expect(res.status).toBe(401);
   });
 
-  it('staff can archive (reversible action) → 200, archives + audits', async () => {
+  it('staff CANNOT archive (v1.2.0: ARCHIVE_ENTITY = admin/manager) → 403', async () => {
+    const { PATCH } = require('@/app/api/certificates/[id]/route');
+    const res = await PATCH(req('http://localhost/api/certificates/cert-001', { action: 'archive' }, staff), params);
+    expect(res.status).toBe(403);
+  });
+
+  it('admin can archive → 200, archives + audits', async () => {
     const { archiveCertificate } = require('@/lib/db/certificates');
     const { appendAuditLog } = require('@/lib/db/audit-log');
     archiveCertificate.mockClear();
     appendAuditLog.mockClear();
 
     const { PATCH } = require('@/app/api/certificates/[id]/route');
-    const res = await PATCH(req('http://localhost/api/certificates/cert-001', { action: 'archive' }, staff), params);
+    const res = await PATCH(req('http://localhost/api/certificates/cert-001', { action: 'archive' }, admin), params);
     expect(res.status).toBe(200);
-    expect(archiveCertificate).toHaveBeenCalledWith('cert-001', 'u2');
+    expect(archiveCertificate).toHaveBeenCalledWith('cert-001', 'u1');
     expect(appendAuditLog).toHaveBeenCalledTimes(1);
     expect(appendAuditLog.mock.calls[0][0].action_type).toBe('certificate.archive');
   });

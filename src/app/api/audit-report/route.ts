@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { getCertificates } from '@/lib/db/certificates';
 import { generateAuditReport } from '@/lib/pdf-generator/audit-report';
 import { appendAuditLog } from '@/lib/db/audit-log';
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    const auth = await requireCap(req, 'VIEW_DATA');
     if (!isAuthResult(auth)) return auth;
 
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown';

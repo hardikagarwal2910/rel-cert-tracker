@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireAuth, isAuthResult, requireSupplierAuth } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult, requireSupplierAuth } from '@/lib/auth/middleware';
 import {
   getSupplierCertById,
   updateSupplierCertStatus,
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
     if (!cert) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     // Try admin/staff auth first
-    const adminAuth = await requireAuth(req, ['admin', 'staff']);
+    const adminAuth = await requireCap(req, 'VIEW_DATA');
     if (isAuthResult(adminAuth)) {
       return NextResponse.json(cert);
     }
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
 
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    const auth = await requireCap(req, 'REVIEW_SUPPLIER_CERTS');
     if (!isAuthResult(auth)) return auth;
 
     const { id } = await context.params;
@@ -76,7 +76,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    const auth = await requireCap(req, 'REVIEW_SUPPLIER_CERTS');
     if (!isAuthResult(auth)) return auth;
 
     const { id } = await context.params;

@@ -1,8 +1,12 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { getCertificates } from '@/lib/db/certificates';
+import { can } from '@/lib/auth/permissions';
 import SupplierForm from '../SupplierForm';
 
 export default async function NewSupplierPage() {
+  if (!can(headers().get('x-user-role'), 'ADD_ENTITY')) redirect('/suppliers');
   const certs = await getCertificates().catch(() => []);
 
   return (

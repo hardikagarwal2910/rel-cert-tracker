@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { getPdfRequests, createPdfRequest } from '@/lib/db/pdf-requests';
 import { appendAuditLog } from '@/lib/db/audit-log';
 import { sendPdfRequestNotification } from '@/lib/mailer';
@@ -15,7 +15,7 @@ const createSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    const auth = await requireCap(req, 'VIEW_DATA');
     if (!isAuthResult(auth)) return auth;
 
     const { searchParams } = new URL(req.url);

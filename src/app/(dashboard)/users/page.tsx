@@ -1,14 +1,15 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getUsers } from '@/lib/db/users';
+import { can, canManageUser } from '@/lib/auth/permissions';
 import UserActiveToggle from './UserActiveToggle';
 import NewUserButton from './NewUserButton';
 import UserPasswordReset from './UserPasswordReset';
 
 export default async function UsersPage() {
   const headersList = headers();
-  const role = headersList.get('x-user-role');
-  if (role !== 'admin') redirect('/');
+  const role = headersList.get('x-user-role') ?? undefined;
+  if (!can(role, 'MANAGE_USERS')) redirect('/');
 
   const users = await getUsers().catch(() => []);
 
@@ -16,7 +17,7 @@ export default async function UsersPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold" style={{ color: '#878687' }}>Users</h1>
-        <NewUserButton />
+        <NewUserButton currentRole={role} />
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-auto">
@@ -54,10 +55,16 @@ export default async function UsersPage() {
                     {u.last_login ? new Date(u.last_login).toLocaleDateString() : 'Never'}
                   </td>
                   <td className="px-4 py-2">
-                    <UserActiveToggle userId={u.id} initialActive={u.active} />
+                    {canManageUser(role, u.role) ? (
+                      <UserActiveToggle userId={u.id} initialActive={u.active} />
+                    ) : (
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${u.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                        {u.active ? 'Active' : 'Inactive'}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-right whitespace-nowrap">
-                    <UserPasswordReset userId={u.id} username={u.username} />
+                    {canManageUser(role, u.role) && <UserPasswordReset userId={u.id} username={u.username} />}
                   </td>
                 </tr>
               ))

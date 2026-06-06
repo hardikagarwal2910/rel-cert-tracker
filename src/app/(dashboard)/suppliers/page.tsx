@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import { getSuppliers } from '@/lib/db/suppliers';
+import { can } from '@/lib/auth/permissions';
 import SuppliersClient from './SuppliersClient';
 
 export default async function SuppliersPage({
@@ -8,7 +9,9 @@ export default async function SuppliersPage({
 }: {
   searchParams?: { inactive?: string };
 }) {
-  const isAdmin = headers().get('x-user-role') === 'admin';
+  const role = headers().get('x-user-role') ?? undefined;
+  const canAdd = can(role, 'ADD_ENTITY');
+  const canArchive = can(role, 'ARCHIVE_ENTITY');
   const showInactive = searchParams?.inactive === 'true';
   const suppliers = await getSuppliers(showInactive ? { includeInactive: true } : undefined).catch(() => []);
 
@@ -19,22 +22,24 @@ export default async function SuppliersPage({
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold" style={{ color: '#878687' }}>Suppliers</h1>
-        <div className="flex gap-2">
-          <Link
-            href="/bulk-import/suppliers"
-            className="px-4 py-2 rounded text-sm font-medium border border-gray-300 hover:bg-gray-50"
-            style={{ color: '#878687' }}
-          >
-            Bulk Onboard
-          </Link>
-          <Link
-            href="/suppliers/new"
-            className="px-4 py-2 rounded text-sm font-medium"
-            style={{ backgroundColor: '#F5C400', color: '#333' }}
-          >
-            + New Supplier
-          </Link>
-        </div>
+        {canAdd && (
+          <div className="flex gap-2">
+            <Link
+              href="/bulk-import/suppliers"
+              className="px-4 py-2 rounded text-sm font-medium border border-gray-300 hover:bg-gray-50"
+              style={{ color: '#878687' }}
+            >
+              Bulk Onboard
+            </Link>
+            <Link
+              href="/suppliers/new"
+              className="px-4 py-2 rounded text-sm font-medium"
+              style={{ backgroundColor: '#F5C400', color: '#333' }}
+            >
+              + New Supplier
+            </Link>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-1 mb-4">
@@ -42,7 +47,7 @@ export default async function SuppliersPage({
         <Link href="/suppliers?inactive=true" className={tabCls(showInactive)}>All (incl. inactive)</Link>
       </div>
 
-      <SuppliersClient suppliers={suppliers} isAdmin={isAdmin} />
+      <SuppliersClient suppliers={suppliers} canArchive={canArchive} />
     </div>
   );
 }

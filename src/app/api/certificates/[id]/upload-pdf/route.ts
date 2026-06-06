@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { getCertificateById, updateCertificate } from '@/lib/db/certificates';
 import { createCertDocument } from '@/lib/db/cert-documents';
 import { appendAuditLog } from '@/lib/db/audit-log';
@@ -12,7 +12,7 @@ type DocType = (typeof DOC_TYPES)[number];
 
 export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    const auth = await requireCap(req, 'ADD_DOCS');
     if (!isAuthResult(auth)) return auth;
 
     const { id } = await context.params;

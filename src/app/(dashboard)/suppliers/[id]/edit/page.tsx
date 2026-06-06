@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { getSupplierById } from '@/lib/db/suppliers';
 import { getCertificates } from '@/lib/db/certificates';
+import { can } from '@/lib/auth/permissions';
 import SupplierForm from '../../SupplierForm';
 
 interface Props {
@@ -10,8 +11,8 @@ interface Props {
 }
 
 export default async function EditSupplierPage({ params }: Props) {
-  // Editing a supplier is admin-only (the API enforces 403; this matches the UI).
-  if (headers().get('x-user-role') !== 'admin') redirect(`/suppliers/${params.id}`);
+  // Editing a supplier is admin/manager only (the API enforces 403; UI matches).
+  if (!can(headers().get('x-user-role'), 'EDIT_ENTITY')) redirect(`/suppliers/${params.id}`);
 
   const [supplier, certs] = await Promise.all([
     getSupplierById(params.id).catch(() => null),

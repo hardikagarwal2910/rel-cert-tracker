@@ -102,7 +102,7 @@ export interface User {
   password_hash: string;
   display_name?: string | null;
   email?: string | null;
-  role: 'admin' | 'staff';
+  role: 'admin' | 'manager' | 'staff' | 'viewer';
   active: boolean;
   two_factor_enabled?: boolean;
   last_login?: string | null;

@@ -2,27 +2,42 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { assignableRoles, type Role } from '@/lib/auth/permissions';
 
 const YELLOW = '#F5C400';
 const TAUPE = '#878687';
 
+const ROLE_LABEL: Record<Role, string> = {
+  admin: 'Admin',
+  manager: 'Manager',
+  staff: 'Staff',
+  viewer: 'Viewer',
+};
+
 /**
- * "New Staff User" button + modal create form. Role is fixed to 'staff' — this
- * form intentionally cannot create an admin account (the API enforces it too).
+ * "New User" button + modal create form. The role dropdown is filtered to the
+ * roles the CURRENT user is allowed to assign (admin → all four; manager →
+ * staff/viewer only). The server enforces the same rule regardless.
  */
-export default function NewUserButton() {
+export default function NewUserButton({ currentRole }: { currentRole?: string }) {
   const router = useRouter();
+  const roleOptions = assignableRoles(currentRole);
+  const defaultRole: Role = roleOptions.includes('staff') ? 'staff' : (roleOptions[0] ?? 'viewer');
+
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [form, setForm] = useState({ username: '', display_name: '', email: '', password: '', active: true });
+  const [form, setForm] = useState({ username: '', display_name: '', email: '', password: '', role: defaultRole as Role, active: true });
 
   const set = (k: keyof typeof form, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
 
   const reset = () => {
-    setForm({ username: '', display_name: '', email: '', password: '', active: true });
+    setForm({ username: '', display_name: '', email: '', password: '', role: defaultRole, active: true });
     setError('');
   };
+
+  // Defensive: if somehow no assignable roles, don't render the button.
+  if (roleOptions.length === 0) return null;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +56,7 @@ export default function NewUserButton() {
           display_name: form.display_name.trim() || undefined,
           email: form.email.trim() || undefined,
           password: form.password,
-          role: 'staff',
+          role: form.role,
           active: form.active,
         }),
       });
@@ -68,16 +83,26 @@ export default function NewUserButton() {
         className="px-4 py-2 rounded text-sm font-medium"
         style={{ backgroundColor: YELLOW, color: '#333' }}
       >
-        + New Staff User
+        + New User
       </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => !loading && setOpen(false)}>
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-bold mb-1" style={{ color: TAUPE }}>New Staff User</h2>
-            <p className="text-xs text-gray-500 mb-4">Creates a <span className="font-medium">staff</span> account (not admin).</p>
+            <h2 className="text-lg font-bold mb-1" style={{ color: TAUPE }}>New User</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              {currentRole === 'manager'
+                ? 'As a manager you can create staff or viewer accounts.'
+                : 'Choose the role for the new account.'}
+            </p>
             {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
             <form onSubmit={submit} className="space-y-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Role *</label>
+                <select value={form.role} onChange={(e) => set('role', e.target.value)} className={inputCls}>
+                  {roleOptions.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
+                </select>
+              </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Username *</label>
                 <input value={form.username} onChange={(e) => set('username', e.target.value)} required className={inputCls} />

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { createSupplier } from '@/lib/db/suppliers';
 import { appendAuditLog } from '@/lib/db/audit-log';
 import { adminLimiter } from '@/lib/rate-limit';
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
   if (limited) return limited;
 
   try {
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    const auth = await requireCap(req, 'BULK_IMPORT');
     if (!isAuthResult(auth)) return auth;
 
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown';

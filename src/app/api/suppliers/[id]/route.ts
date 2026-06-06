@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import {
   getSupplierById,
   updateSupplier,
@@ -36,7 +36,7 @@ const updateSchema = z.object({
 
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    const auth = await requireCap(req, 'VIEW_DATA');
     if (!isAuthResult(auth)) return auth;
 
     const { id } = await context.params;
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     // Editing a supplier is admin-only. Staff may ADD suppliers (POST) but not edit.
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'EDIT_ENTITY');
     if (!isAuthResult(auth)) return auth;
 
     const { id } = await context.params;
@@ -83,7 +83,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 // PATCH — archive (deactivate) / reactivate a supplier (admin).
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'ARCHIVE_ENTITY');
     if (!isAuthResult(auth)) return auth;
 
     const { id } = await context.params;
@@ -118,7 +118,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 
 export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'ARCHIVE_ENTITY');
     if (!isAuthResult(auth)) return auth;
 
     const { id } = await context.params;

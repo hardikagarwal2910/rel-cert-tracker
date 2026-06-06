@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { getLocationById, getCertCountByLocation } from '@/lib/db/locations';
 import { locationAddressLines } from '@/lib/location-label';
+import { can } from '@/lib/auth/permissions';
 import LocationForm from '../LocationForm';
 
 interface Props {
@@ -10,8 +11,8 @@ interface Props {
 }
 
 export default async function LocationDetailPage({ params }: Props) {
-  // Staff can view full location details; only admins may edit.
-  const isAdmin = headers().get('x-user-role') === 'admin';
+  // Staff/viewer can view full location details; only admin/manager may edit.
+  const isAdmin = can(headers().get('x-user-role'), 'EDIT_ENTITY');
   const [location, counts] = await Promise.all([
     getLocationById(params.id).catch(() => null),
     getCertCountByLocation().catch(() => []),

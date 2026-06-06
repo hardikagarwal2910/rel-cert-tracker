@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { getCertificates, getExpiringSoon } from '@/lib/db/certificates';
 import { getPendingReviewQueue } from '@/lib/db/supplier-certs';
 import { getBuyers } from '@/lib/db/buyers';
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
 // Manual trigger by admin.
 export async function POST(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'SETTINGS');
     if (!isAuthResult(auth)) return auth;
     const result = await buildAndSend();
     appendAuditLog({ action_type: 'cron.digest.manual', user_identifier: auth.username, detail: JSON.stringify(result.summary), ip_address: req.headers.get('x-forwarded-for') ?? 'unknown' });

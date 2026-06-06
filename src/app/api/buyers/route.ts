@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { getBuyers } from '@/lib/db/buyers';
 import type { BuyerStatus } from '@/types/database';
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'MANAGE_BUYERS');
     if (!isAuthResult(auth)) return auth;
 
     const { searchParams } = new URL(req.url);

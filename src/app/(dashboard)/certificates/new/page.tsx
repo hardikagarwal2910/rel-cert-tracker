@@ -1,9 +1,13 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { getCategories } from '@/lib/db/categories';
 import { getLocations } from '@/lib/db/locations';
+import { can } from '@/lib/auth/permissions';
 import CertForm from '../CertForm';
 
 export default async function NewCertificatePage() {
+  if (!can(headers().get('x-user-role'), 'ADD_ENTITY')) redirect('/certificates');
   const [categories, locations] = await Promise.all([
     getCategories(true).catch(() => []),
     getLocations(true).catch(() => []),

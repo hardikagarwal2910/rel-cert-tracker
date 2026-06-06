@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, isAuthResult, requireSupplierAuth } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult, requireSupplierAuth } from '@/lib/auth/middleware';
 import { getSupplierCerts, getPendingReviewQueue, createSupplierCert } from '@/lib/db/supplier-certs';
 import { getSupplierById } from '@/lib/db/suppliers';
 import { appendAuditLog } from '@/lib/db/audit-log';
@@ -10,7 +10,7 @@ const MAX_SIZE = 20 * 1024 * 1024; // 20 MB
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    const auth = await requireCap(req, 'VIEW_DATA');
     if (!isAuthResult(auth)) return auth;
 
     const { searchParams } = new URL(req.url);

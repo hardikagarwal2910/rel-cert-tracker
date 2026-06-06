@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { zipSync, strToU8 } from 'fflate';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { appendAuditLog } from '@/lib/db/audit-log';
 import { backupLimiter } from '@/lib/rate-limit';
 import { adminClient } from '@/lib/supabase/admin';
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
   if (limited) return limited;
 
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'BACKUP');
     if (!isAuthResult(auth)) return auth;
 
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown';

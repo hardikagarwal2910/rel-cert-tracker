@@ -2,12 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { can, type Capability } from '@/lib/auth/permissions';
 
 export interface NavLink {
   href: string;
   label: string;
   badge?: boolean;
-  adminOnly?: boolean;
+  // Nav item is shown only if the current role has this capability. Defaults to
+  // VIEW_DATA (visible to every authenticated role, incl. viewer).
+  cap?: Capability;
 }
 
 const YELLOW = '#F5C400';
@@ -16,7 +19,7 @@ export default function Sidebar({ links, pendingCount, role }: { links: NavLink[
   const pathname = usePathname();
 
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
-  const visibleLinks = links.filter((l) => !l.adminOnly || role === 'admin');
+  const visibleLinks = links.filter((l) => can(role, l.cap ?? 'VIEW_DATA'));
 
   return (
     <nav className="flex-1 overflow-y-auto py-4">

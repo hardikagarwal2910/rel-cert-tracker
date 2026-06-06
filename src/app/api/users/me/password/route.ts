@@ -22,7 +22,7 @@ const schema = z
 
 async function handle(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['admin', 'staff']);
+    const auth = await requireAuth(req, ['admin', 'manager', 'staff', 'viewer']);
     if (!isAuthResult(auth)) return auth;
 
     const ip = req.headers.get('x-forwarded-for') ?? 'unknown';

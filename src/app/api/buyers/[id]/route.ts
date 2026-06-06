@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireAuth, isAuthResult } from '@/lib/auth/middleware';
+import { requireCap, isAuthResult } from '@/lib/auth/middleware';
 import { getBuyerById, setBuyerVisibleTags } from '@/lib/db/buyers';
 import { appendAuditLog } from '@/lib/db/audit-log';
 
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'MANAGE_BUYERS');
     if (!isAuthResult(auth)) return auth;
     const { id } = await context.params;
     const buyer = await getBuyerById(id);
@@ -21,7 +21,7 @@ const patchSchema = z.object({ visible_tags: z.array(z.string()) });
 
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireAuth(req, ['admin']);
+    const auth = await requireCap(req, 'MANAGE_BUYERS');
     if (!isAuthResult(auth)) return auth;
 
     const { id } = await context.params;
